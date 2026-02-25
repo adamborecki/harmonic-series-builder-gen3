@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Harmonic Series Builder — Staff + Keyboard</title>
+
+<!-- VexFlow 4.x for notation -->
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
+<!-- Tone.js for audio -->
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════
+   CSS — Dark theme, mobile-first
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --surface: #0f3460;
+  --text: #e0e0e0;
+  --text-dim: #8899aa;
+  --accent: #e94560;
+  --success: #2ecc71;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --info: #3498db;
+  --white-key: #f0f0f0;
+  --black-key: #222;
+  --key-border: #999;
+  --highlight: #e94560;
+  --ghost-color: rgba(150,150,150,0.5);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── Audio overlay ── */
+#audio-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  text-align: center;
+  padding: 2rem;
+}
+#audio-overlay h1 { font-size: 1.8rem; margin-bottom: 1rem; color: #fff; }
+#audio-overlay .btn-enable {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 12px;
+  padding: 1rem 2.5rem; font-size: 1.2rem;
+  cursor: pointer; margin-bottom: 1rem;
+  transition: transform 0.1s;
+}
+#audio-overlay .btn-enable:active { transform: scale(0.96); }
+#audio-overlay .btn-skip {
+  background: none; border: 1px solid #555;
+  color: #999; border-radius: 8px;
+  padding: 0.6rem 1.5rem; font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* ── Top bar ── */
+#top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: var(--bg2);
+  border-bottom: 1px solid #333;
+  flex-wrap: wrap; gap: 0.5rem;
+}
+.mode-tabs { display: flex; gap: 0.25rem; }
+.mode-tab {
+  background: transparent; color: var(--text-dim);
+  border: 1px solid #444; border-radius: 6px;
+  padding: 0.4rem 0.8rem; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.15s;
+}
+.mode-tab.active {
+  background: var(--accent); color: #fff;
+  border-color: var(--accent);
+}
+#reminder-toggle {
+  background: var(--surface); color: var(--text);
+  border: 1px solid #555; border-radius: 6px;
+  padding: 0.4rem 0.8rem; font-size: 0.85rem;
+  cursor: pointer; white-space: nowrap;
+}
+#reminder-toggle.on { background: var(--info); border-color: var(--info); color: #fff; }
+
+/* ── Custom practice panel ── */
+#custom-panel {
+  display: none; padding: 0.75rem 1rem;
+  background: var(--bg2); border-bottom: 1px solid #333;
+  gap: 0.5rem; flex-wrap: wrap; align-items: center;
+}
+#custom-panel.visible { display: flex; }
+#custom-panel label { font-size: 0.85rem; color: var(--text-dim); }
+#custom-panel select, #custom-panel button {
+  background: var(--surface); color: var(--text);
+  border: 1px solid #555; border-radius: 6px;
+  padding: 0.35rem 0.6rem; font-size: 0.9rem;
+  cursor: pointer;
+}
+#custom-panel button { background: var(--accent); border-color: var(--accent); color: #fff; }
+#streak-display { font-size: 0.85rem; color: var(--text-dim); margin-left: auto; }
+
+/* ── Tutorial progress ── */
+#tutorial-progress {
+  padding: 0.5rem 1rem;
+  background: var(--bg2); border-bottom: 1px solid #333;
+  font-size: 0.85rem; color: var(--text-dim);
+}
+
+/* ── Instruction block (visually dominant) ── */
+#instruction-block {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, var(--bg2), var(--surface));
+  border-bottom: 2px solid var(--accent);
+}
+#instruction-h1 {
+  font-size: 1.3rem; font-weight: 700;
+  color: #fff; margin-bottom: 0.25rem;
+}
+#instruction-h2 {
+  font-size: 1rem; color: var(--warning);
+  margin-bottom: 0.25rem; font-weight: 600;
+}
+#instruction-sub {
+  font-size: 0.85rem; color: var(--info);
+  font-style: italic;
+}
+
+/* ── Notation panel ── */
+#notation-panel {
+  background: #fff;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 200px;
+  position: relative;
+}
+#notation-panel svg { display: block; }
+
+/* ── Frequency display row ── */
+#freq-row {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: var(--bg2);
+  font-size: 0.75rem; color: var(--text-dim);
+  border-bottom: 1px solid #333;
+  min-height: 1.5rem;
+}
+.freq-badge {
+  background: var(--surface);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
+
+/* ── Ghost note caption area (fixed height to avoid layout shift) ── */
+#ghost-caption {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  height: 1.4rem;
+  line-height: 1.4rem;
+  background: var(--bg2);
+}
+
+/* ── Step panels ── */
+.step-panel {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #333;
+}
+.step-label {
+  font-size: 0.95rem; font-weight: 700;
+  color: var(--info); margin-bottom: 0.5rem;
+}
+.step-controls {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── Buttons ── */
+.btn {
+  border: none; border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all 0.1s;
+  color: #fff; min-width: 44px; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.3rem;
+}
+.btn:active { transform: scale(0.95); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-move { background: var(--surface); font-size: 1.1rem; }
+.btn-check { background: var(--info); }
+.btn-next { background: var(--success); }
+.btn-acc { background: var(--surface); min-width: 52px; font-size: 1rem; }
+.btn-acc.selected { background: var(--accent); }
+.btn-halfstep { background: var(--surface); font-size: 0.85rem; padding: 0.5rem 0.8rem; }
+.btn-halfstep.active { background: var(--accent); }
+
+/* ── Feedback messages ── */
+#feedback {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-height: 2.2rem;
+  display: flex; align-items: center;
+}
+#feedback.success { background: rgba(46,204,113,0.15); color: var(--success); }
+#feedback.warning { background: rgba(243,156,18,0.15); color: var(--warning); }
+#feedback.error { background: rgba(231,76,60,0.15); color: var(--error); }
+#feedback.info { background: rgba(52,152,219,0.15); color: var(--info); }
+
+/* ── Half-step tool panel ── */
+#halfstep-panel {
+  display: none;
+  padding: 0.75rem 1rem;
+  background: var(--bg2);
+  border-bottom: 1px solid #333;
+}
+#halfstep-panel.visible { display: block; }
+#halfstep-controls {
+  display: flex; gap: 0.5rem; align-items: center;
+  flex-wrap: wrap; margin-bottom: 0.5rem;
+}
+#halfstep-info {
+  font-size: 0.8rem; color: var(--text-dim);
+  margin-bottom: 0.3rem;
+}
+#halfstep-cheat {
+  font-size: 0.75rem; color: var(--text-dim);
+  opacity: 0.7;
+}
+#current-pitch-label {
+  font-size: 0.8rem; color: var(--text);
+  margin-top: 0.3rem;
+}
+
+/* ═══════════════════════════════════════════
+   Piano Keyboard — CSS Grid approach
+   ═══════════════════════════════════════════ */
+#keyboard-container {
+  background: var(--bg2);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #333;
+  overflow: hidden;
+  position: relative;
+}
+#keyboard-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0.5rem;
+}
+#c-markers {
+  display: flex;
+  height: 1rem;
+  position: relative;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+#piano {
+  position: relative;
+  height: 120px;
+}
+.white-key {
+  position: absolute;
+  background: var(--white-key);
+  border: 1px solid var(--key-border);
+  border-radius: 0 0 4px 4px;
+  height: 100%;
+  cursor: pointer;
+  z-index: 1;
+  transition: background 0.1s;
+}
+.white-key.highlight { background: var(--highlight); }
+.white-key.counting { background: #ffcc00; }
+.white-key.start-key { background: #aaddff; }
+.white-key:active { background: #ddd; }
+.black-key {
+  position: absolute;
+  background: var(--black-key);
+  border: 1px solid #111;
+  border-radius: 0 0 3px 3px;
+  height: 65%;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.1s;
+}
+.black-key.highlight { background: var(--highlight); }
+.black-key.counting { background: #ffcc00; }
+.black-key.start-key { background: #aaddff; }
+.black-key:active { background: #444; }
+
+/* ── Advanced / info panel ── */
+#advanced-panel {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+#advanced-toggle {
+  background: none; border: 1px solid #555;
+  color: var(--text-dim); border-radius: 6px;
+  padding: 0.3rem 0.6rem; font-size: 0.8rem;
+  cursor: pointer; margin-bottom: 0.5rem;
+}
+#advanced-content { display: none; }
+#advanced-content.visible { display: block; }
+
+/* ── Completion message ── */
+#completion-msg {
+  display: none;
+  padding: 1rem;
+  background: var(--bg2);
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+#completion-msg.visible { display: block; }
+#completion-msg h2 { color: var(--success); margin-bottom: 0.5rem; }
+#completion-msg p { color: var(--text-dim); font-size: 0.9rem; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 1rem; left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface); color: var(--text);
+  padding: 0.6rem 1.2rem; border-radius: 8px;
+  font-size: 0.85rem; z-index: 9000;
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  #instruction-h1 { font-size: 1.1rem; }
+  #instruction-h2 { font-size: 0.9rem; }
+  .btn { padding: 0.5rem 0.8rem; font-size: 0.85rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Audio Overlay ═══ -->
+<div id="audio-overlay">
+  <h1>Tap to Enable Audio</h1>
+  <button class="btn-enable" id="btn-enable-audio">Enable Audio</button>
+  <button class="btn-skip" id="btn-skip-audio">Continue without sound</button>
+</div>
+
+<!-- ═══ Top Bar ═══ -->
+<div id="top-bar">
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="guided">Guided Tutorial</button>
+    <button class="mode-tab" data-mode="custom">Custom Practice</button>
+  </div>
+  <button id="reminder-toggle" class="on">Reminders: ON</button>
+</div>
+
+<!-- ═══ Tutorial Progress ═══ -->
+<div id="tutorial-progress">Tutorial 1 of 4 — Fundamental: B3</div>
+
+<!-- ═══ Custom Practice Panel ═══ -->
+<div id="custom-panel">
+  <label>Fundamental:</label>
+  <select id="fund-note">
+    <option>C</option><option>C#</option><option>Db</option>
+    <option>D</option><option>D#</option><option>Eb</option>
+    <option>E</option><option>F</option><option>F#</option>
+    <option>Gb</option><option>G</option><option>G#</option>
+    <option>Ab</option><option>A</option><option>A#</option>
+    <option>Bb</option><option selected>B</option>
+  </select>
+  <select id="fund-octave">
+    <option>1</option><option>2</option><option selected>3</option><option>4</option>
+  </select>
+  <button id="btn-random">Random</button>
+  <button id="btn-start-custom">Start</button>
+  <span id="streak-display">Streak: 0</span>
+</div>
+
+<!-- ═══ Instruction Block ═══ -->
+<div id="instruction-block">
+  <div id="instruction-h1">Notate the 1st partial</div>
+  <div id="instruction-h2">Fundamental</div>
+  <div id="instruction-sub"></div>
+</div>
+
+<!-- ═══ Notation Panel (white bg for reliability) ═══ -->
+<div id="notation-panel">
+  <div id="vex-output"></div>
+</div>
+
+<!-- ═══ Frequency display ═══ -->
+<div id="freq-row"></div>
+
+<!-- ═══ Ghost note caption ═══ -->
+<div id="ghost-caption"></div>
+
+<!-- ═══ Feedback ═══ -->
+<div id="feedback"></div>
+
+<!-- ═══ Step A — Line/space ═══ -->
+<div class="step-panel" id="step-a-panel">
+  <div class="step-label" id="step-a-label">Step A — Which line/space?</div>
+  <div class="step-controls">
+    <button class="btn btn-move" id="btn-up">&#x2B06;&#xFE0F; Move Note Up</button>
+    <button class="btn btn-move" id="btn-down">&#x2B07;&#xFE0F; Move Note Down</button>
+    <button class="btn btn-check" id="btn-check-a">Check line/space</button>
+  </div>
+  <div id="step-a-hint" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-dim);"></div>
+</div>
+
+<!-- ═══ Step B — Accidental ═══ -->
+<div class="step-panel" id="step-b-panel" style="display:none;">
+  <div class="step-label" id="step-b-label">Step B — Which accidental?</div>
+  <div class="step-controls" id="accidental-btns">
+    <button class="btn btn-acc" data-acc="bb">&#x1D12B;</button>
+    <button class="btn btn-acc" data-acc="b">&#x266D;</button>
+    <button class="btn btn-acc" data-acc="n">&#x266E;</button>
+    <button class="btn btn-acc" data-acc="#">&#x266F;</button>
+    <button class="btn btn-acc" data-acc="##">&#x1D12A;</button>
+  </div>
+  <div style="margin-top:0.5rem;">
+    <button class="btn btn-check" id="btn-check-b">Check accidental</button>
+  </div>
+  <div id="step-b-hint" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-dim);"></div>
+</div>
+
+<!-- ═══ Half-step tool ═══ -->
+<div id="halfstep-panel">
+  <div id="halfstep-info"></div>
+  <div id="halfstep-controls">
+    <button class="btn btn-halfstep" id="btn-hs-prev">&#x2190; Prev half-step</button>
+    <button class="btn btn-halfstep" id="btn-hs-toggle">Count half-steps</button>
+    <button class="btn btn-halfstep" id="btn-hs-next">Next half-step &#x2192;</button>
+  </div>
+  <div id="halfstep-cheat"></div>
+  <div id="current-pitch-label"></div>
+</div>
+
+<!-- ═══ Next partial button ═══ -->
+<div class="step-panel" id="next-panel" style="display:none;">
+  <button class="btn btn-next" id="btn-next-partial">Next partial &#x27A1;&#xFE0F;</button>
+</div>
+
+<!-- ═══ Keyboard ═══ -->
+<div id="keyboard-container">
+  <div id="keyboard-scroll">
+    <div id="c-markers"></div>
+    <div id="piano"></div>
+  </div>
+</div>
+
+<!-- ═══ Completion message ═══ -->
+<div id="completion-msg">
+  <h2>All 8 Partials Complete!</h2>
+  <p>More partials continue (whole-tone-ish, then chromatic-ish, then microtonal).</p>
+  <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-dim);">Partials 9–16 shown below in gray. Click to hear their frequencies.</p>
+</div>
+
+<!-- ═══ Advanced panel ═══ -->
+<div id="advanced-panel">
+  <button id="advanced-toggle">&#x2139;&#xFE0F; Advanced Info</button>
+  <div id="advanced-content">
+    <p><strong>Scientific pitch notation:</strong> C4 is middle C. B3 is directly below middle C.</p>
+    <p>Ratios: 1:1, 2:1, 3:2, 4:2, 5:4, 6:5 (=3:1 octave), 8:4 (=2:1 three oct), 7:4</p>
+  </div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   Harmonic Series Builder — GEN3
+   Single-file app for GitHub Pages.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Constants ──
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTE_NAMES_FLAT = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+// All possible letter names for staff positions
+const LETTERS = ['C','D','E','F','G','A','B'];
+
+// MIDI note 0 = C-1, MIDI 60 = C4
+function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+function noteToMidi(letter, accidental, octave) {
+  // letter: 'C'..'B', accidental: -2..+2 (bb,b,n,#,##), octave: int
+  const base = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+  return (octave + 1) * 12 + base[letter] + accidental;
+}
+function midiToNoteInfo(midi) {
+  const oct = Math.floor(midi / 12) - 1;
+  const pc = midi % 12;
+  return { name: NOTE_NAMES[pc], octave: oct, pc };
+}
+function accidentalToInt(acc) {
+  return { 'bb': -2, 'b': -1, 'n': 0, '#': 1, '##': 2 }[acc] || 0;
+}
+function intToAccidental(n) {
+  return { '-2':'bb', '-1':'b', '0':'n', '1':'#', '2':'##' }[String(n)] || 'n';
+}
+function accidentalDisplay(acc) {
+  return { 'bb':'𝄫', 'b':'♭', 'n':'', '#':'♯', '##':'𝄪' }[acc] || '';
+}
+
+// Parse note string like "B3", "Eb2", "C#4", "Db3"
+function parseNote(str) {
+  const m = str.match(/^([A-G])(b{1,2}|#{1,2}|n)?(\d)$/);
+  if (!m) return null;
+  const letter = m[1];
+  const accStr = m[2] || 'n';
+  const octave = parseInt(m[3]);
+  const acc = accidentalToInt(accStr);
+  return { letter, accidental: acc, accStr: accStr === 'n' ? 'n' : accStr, octave, midi: noteToMidi(letter, acc, octave) };
+}
+
+// Format note for display
+function formatNote(letter, acc, octave) {
+  return letter + accidentalDisplay(intToAccidental(acc)) + octave;
+}
+
+// ── Harmonic series calculation ──
+// Given a fundamental MIDI note, compute the target note for each partial (1-8)
+// partial n: frequency = fundamental_freq * n
+// We find the closest MIDI note and the required spelling
+function computePartials(fundNote) {
+  const fundFreq = midiToFreq(fundNote.midi);
+  const fundLetter = fundNote.letter;
+  const fundAcc = fundNote.accidental;
+
+  // partial order for the UI: [1,2,3,4,5,6,8,7]
+  const partialNums = [1,2,3,4,5,6,8,7];
+  const results = [];
+
+  for (const n of partialNums) {
+    const freq = fundFreq * n;
+    // Find closest MIDI
+    const midi = Math.round(12 * Math.log2(freq / 440) + 69);
+    const centsOff = Math.round(1200 * Math.log2(freq / midiToFreq(midi)));
+
+    // Determine correct spelling based on interval from previous partial
+    let spelling = computeSpelling(fundNote, n, midi);
+    results.push({
+      partialNum: n,
+      freq,
+      midi,
+      centsOff,
+      letter: spelling.letter,
+      accidental: spelling.accidental,
+      octave: spelling.octave,
+      intervalName: spelling.intervalName,
+      intervalAbbr: spelling.intervalAbbr,
+      halfSteps: spelling.halfSteps,
+      genericInterval: spelling.genericInterval,
+      fromPartial: spelling.fromPartial,
+    });
+  }
+  return results;
+}
+
+function computeSpelling(fundNote, partialNum, midi) {
+  const fundLetter = fundNote.letter;
+  const fundLetterIdx = LETTERS.indexOf(fundLetter);
+  const fundAcc = fundNote.accidental;
+  const fundOct = fundNote.octave;
+
+  // Helper: given letter index offset from fund and target midi, compute accidental + octave
+  function spellFromInterval(letterOffset, targetMidi, fromLetter, fromAcc, fromOct) {
+    let newLetterIdx = (LETTERS.indexOf(fromLetter) + letterOffset) % 7;
+    if (newLetterIdx < 0) newLetterIdx += 7;
+    const newLetter = LETTERS[newLetterIdx];
+
+    // Figure out what octave: count from fromLetter/fromOct
+    let oct = fromOct;
+    let li = LETTERS.indexOf(fromLetter);
+    for (let i = 0; i < letterOffset; i++) {
+      li++;
+      if (li >= 7) { li = 0; oct++; }
+    }
+
+    const naturalMidi = noteToMidi(newLetter, 0, oct);
+    const neededAcc = targetMidi - naturalMidi;
+    // Clamp to [-2, 2]
+    if (neededAcc < -2 || neededAcc > 2) {
+      // Try adjacent octave
+      const naturalMidi2 = noteToMidi(newLetter, 0, oct + 1);
+      const neededAcc2 = targetMidi - naturalMidi2;
+      if (neededAcc2 >= -2 && neededAcc2 <= 2) {
+        return { letter: newLetter, accidental: neededAcc2, octave: oct + 1 };
+      }
+      const naturalMidi3 = noteToMidi(newLetter, 0, oct - 1);
+      const neededAcc3 = targetMidi - naturalMidi3;
+      if (neededAcc3 >= -2 && neededAcc3 <= 2) {
+        return { letter: newLetter, accidental: neededAcc3, octave: oct - 1 };
+      }
+    }
+    return { letter: newLetter, accidental: neededAcc, octave: oct };
+  }
+
+  let result;
+  switch (partialNum) {
+    case 1: // Fundamental itself
+      result = { ...fundNote };
+      result.intervalName = 'Fundamental';
+      result.intervalAbbr = '';
+      result.halfSteps = 0;
+      result.genericInterval = 1;
+      result.fromPartial = null;
+      return result;
+
+    case 2: // Octave above fundamental
+      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 1,
+               intervalName: 'Octave', intervalAbbr: 'P8', halfSteps: 12, genericInterval: 8, fromPartial: 1 };
+
+    case 3: { // P5 above 2nd partial
+      // 2nd partial letter = fund letter, one octave up
+      const p2Oct = fundOct + 1;
+      const s = spellFromInterval(4, midi, fundLetter, fundAcc, p2Oct);
+      return { ...s, intervalName: 'Perfect Fifth', intervalAbbr: 'P5', halfSteps: 7, genericInterval: 5, fromPartial: 2 };
+    }
+
+    case 4: // Two octaves above fundamental
+      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 2,
+               intervalName: 'Two Octaves', intervalAbbr: 'P8', halfSteps: 12, genericInterval: 8, fromPartial: 2 };
+
+    case 5: { // Major third above 4th partial
+      const p4Oct = fundOct + 2;
+      const s = spellFromInterval(2, midi, fundLetter, fundAcc, p4Oct);
+      return { ...s, intervalName: 'Major Third', intervalAbbr: 'M3', halfSteps: 4, genericInterval: 3, fromPartial: 4 };
+    }
+
+    case 6: { // m3 above 5th partial — "Perfect Fifth (again)"
+      // 5th partial = M3 above 4th partial
+      const p4Oct = fundOct + 2;
+      const p5Spelling = spellFromInterval(2, Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 5 / 440) + 69), fundLetter, fundAcc, p4Oct);
+      const s = spellFromInterval(2, midi, p5Spelling.letter, p5Spelling.accidental, p5Spelling.octave);
+      return { ...s, intervalName: 'Perfect Fifth (again)', intervalAbbr: 'm3', halfSteps: 3, genericInterval: 3, fromPartial: 5 };
+    }
+
+    case 8: // Three octaves above fundamental
+      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 3,
+               intervalName: 'Three Octaves', intervalAbbr: 'P8', halfSteps: 12, genericInterval: 8, fromPartial: 4 };
+
+    case 7: { // m3 above 6th partial — "Harmonic Seventh"
+      // 6th partial
+      const p6Midi = Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 6 / 440) + 69);
+      // 6th partial spelling: need 5th partial first
+      const p4Oct = fundOct + 2;
+      const p5Midi = Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 5 / 440) + 69);
+      const p5Spelling = spellFromInterval(2, p5Midi, fundLetter, fundAcc, p4Oct);
+      const p6Spelling = spellFromInterval(2, p6Midi, p5Spelling.letter, p5Spelling.accidental, p5Spelling.octave);
+      const s = spellFromInterval(2, midi, p6Spelling.letter, p6Spelling.accidental, p6Spelling.octave);
+      return { ...s, intervalName: 'Harmonic Seventh (out of tune)', intervalAbbr: 'm3', halfSteps: 3, genericInterval: 3, fromPartial: 6 };
+    }
+  }
+}
+
+// ── Guided Tutorial fundamentals ──
+const TUTORIAL_FUNDAMENTALS = [
+  parseNote('B2'),
+  parseNote('Eb2'),
+  parseNote('C2'),
+  parseNote('Db3'),
+];
+
+// ═══ APP STATE ═══
+const State = {
+  mode: 'guided',        // 'guided' | 'custom'
+  reminders: true,
+  audioEnabled: false,
+  tutorialIndex: 0,      // 0..3
+  fundamental: null,     // { letter, accidental, accStr, octave, midi }
+  partials: [],          // computed from fundamental
+  currentPartialIdx: 0,  // index into partials array (0..7)
+  step: 'A',             // 'A' | 'B' | 'done'
+  // Current working note position
+  workLetter: 'B',       // letter name
+  workAcc: 0,            // accidental as int
+  workOctave: 2,         // octave
+  // Completed partials
+  completed: [],         // array of { partialNum, letter, accidental, octave, midi, freq }
+  // Half-step counting
+  halfStepActive: false,
+  halfStepCount: 0,
+  halfStepStartMidi: 0,
+  halfStepDirection: 1,  // 1 = right, -1 = left
+  // Accidental availability (VexFlow self-test)
+  availableAccidentals: ['bb','b','n','#','##'],
+  // Custom practice
+  streak: 0,
+  // Partials 9-16 display
+  showExtended: false,
+};
+
+// ═══ DOM REFS ═══
+const $ = id => document.getElementById(id);
+const audioOverlay = $('audio-overlay');
+const feedbackEl = $('feedback');
+const instructionH1 = $('instruction-h1');
+const instructionH2 = $('instruction-h2');
+const instructionSub = $('instruction-sub');
+const stepAPanel = $('step-a-panel');
+const stepBPanel = $('step-b-panel');
+const stepALabel = $('step-a-label');
+const stepBLabel = $('step-b-label');
+const stepAHint = $('step-a-hint');
+const stepBHint = $('step-b-hint');
+const nextPanel = $('next-panel');
+const halfstepPanel = $('halfstep-panel');
+const ghostCaption = $('ghost-caption');
+const freqRow = $('freq-row');
+const customPanel = $('custom-panel');
+const tutorialProgress = $('tutorial-progress');
+const completionMsg = $('completion-msg');
+const vexOutput = $('vex-output');
+
+// ═══ AUDIO ═══
+let audioStarted = false;
+
+async function initAudio() {
+  try {
+    await Tone.start();
+    audioStarted = true;
+    State.audioEnabled = true;
+  } catch(e) {
+    console.warn('Audio init failed:', e);
+  }
+}
+
+function playSine(freq, durationMs = 300, volume = -18) {
+  if (!audioStarted) return;
+  try {
+    const now = Tone.now();
+    const dur = durationMs / 1000;
+    const env = new Tone.AmplitudeEnvelope({
+      attack: 0.015, decay: 0.01, sustain: 1.0, release: 0.015
+    }).toDestination();
+    const osc = new Tone.Oscillator(freq, 'sine').connect(env);
+    osc.volume.value = volume;
+    osc.start(now);
+    env.triggerAttack(now);
+    env.triggerRelease(now + dur);
+    osc.stop(now + dur + 0.05);
+  } catch(e) { /* ignore audio errors */ }
+}
+
+function playDyad(freq1, freq2, durationMs = 330, volume = -18) {
+  if (!audioStarted) return;
+  try {
+    const now = Tone.now();
+    const dur = durationMs / 1000;
+    [freq1, freq2].forEach(f => {
+      const env = new Tone.AmplitudeEnvelope({
+        attack: 0.015, decay: 0.01, sustain: 1.0, release: 0.015
+      }).toDestination();
+      const osc = new Tone.Oscillator(f, 'sine').connect(env);
+      osc.volume.value = volume;
+      osc.start(now);
+      env.triggerAttack(now);
+      env.triggerRelease(now + dur);
+      osc.stop(now + dur + 0.05);
+    });
+  } catch(e) { /* ignore */ }
+}
+
+// ═══ AUDIO OVERLAY ═══
+$('btn-enable-audio').addEventListener('click', async () => {
+  await initAudio();
+  audioOverlay.style.display = 'none';
+});
+$('btn-skip-audio').addEventListener('click', () => {
+  audioOverlay.style.display = 'none';
+});
+
+// ═══ TOAST ═══
+let toastTimer;
+function showToast(msg, duration = 3000) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══ VEXFLOW SELF-TEST ═══
+function vexflowSelfTest() {
+  const testAccidentals = ['bb','b','n','#','##'];
+  const available = [];
+  for (const acc of testAccidentals) {
+    try {
+      const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
+      const div = document.createElement('div');
+      div.style.position = 'absolute';
+      div.style.left = '-9999px';
+      document.body.appendChild(div);
+      const renderer = new Renderer(div, Renderer.Backends.SVG);
+      renderer.resize(100, 100);
+      const ctx = renderer.getContext();
+      const stave = new Stave(0, 0, 90);
+      stave.setContext(ctx).draw();
+      const note = new StaveNote({ keys: ['c/4'], duration: 'q' });
+      if (acc !== 'n') note.addModifier(new Accidental(acc), 0);
+      const voice = new Voice({ num_beats: 1, beat_value: 4 });
+      voice.setMode(Voice.Mode.SOFT);
+      voice.addTickables([note]);
+      new Formatter().joinVoices([voice]).format([voice], 50);
+      voice.draw(ctx, stave);
+      available.push(acc);
+      document.body.removeChild(div);
+    } catch(e) {
+      console.warn(`VexFlow accidental "${acc}" failed:`, e);
+      showToast(`Some accidentals unavailable in this build.`);
+    }
+  }
+  State.availableAccidentals = available;
+  // Update accidental buttons
+  document.querySelectorAll('.btn-acc').forEach(btn => {
+    if (!available.includes(btn.dataset.acc)) {
+      btn.disabled = true;
+      btn.title = 'Unavailable';
+    }
+  });
+}
+
+// ═══ VEXFLOW RENDERING ═══
+function renderNotation() {
+  const { Renderer, Stave, StaveNote, StaveConnector, Voice, Formatter, Accidental, GhostNote } = Vex.Flow;
+
+  vexOutput.innerHTML = '';
+
+  const isMobile = window.innerWidth < 500;
+  const slotWidth = isMobile ? 42 : 50;
+  const clefWidth = 45;
+  const padLeft = 15;
+  const padRight = 10;
+  const braceWidth = 20;
+  const numSlots = State.showExtended ? 16 : 8;
+  const totalWidth = braceWidth + clefWidth + padLeft + (numSlots * slotWidth) + padRight;
+
+  const renderer = new Renderer(vexOutput, Renderer.Backends.SVG);
+  const trebleY = 10;
+  const bassY = 110;
+  const staveWidth = totalWidth - braceWidth;
+  renderer.resize(totalWidth, 230);
+  const ctx = renderer.getContext();
+
+  // Staves
+  const treble = new Stave(braceWidth, trebleY, staveWidth);
+  treble.addClef('treble');
+  treble.setContext(ctx).draw();
+
+  const bass = new Stave(braceWidth, bassY, staveWidth);
+  bass.addClef('bass');
+  bass.setContext(ctx).draw();
+
+  // Connectors
+  const brace = new StaveConnector(treble, bass);
+  brace.setType(StaveConnector.type.BRACE);
+  brace.setContext(ctx).draw();
+  const lineL = new StaveConnector(treble, bass);
+  lineL.setType(StaveConnector.type.SINGLE_LEFT);
+  lineL.setContext(ctx).draw();
+  const lineR = new StaveConnector(treble, bass);
+  lineR.setType(StaveConnector.type.SINGLE_RIGHT);
+  lineR.setContext(ctx).draw();
+
+  // Decide which notes go to treble vs bass
+  // Middle: B3 and below -> bass; C4 and above -> treble
+  // But we use a single voice approach per stave
+  const TREBLE_CUTOFF = 60; // C4 MIDI = 60
+
+  const trebleNotes = [];
+  const bassNotes = [];
+
+  // Determine which slot the current working partial occupies (by partial number, not pedagogical order)
+  const currentPartial = (!State.showExtended && State.currentPartialIdx < State.partials.length)
+    ? State.partials[State.currentPartialIdx] : null;
+  const currentSlot = currentPartial ? currentPartial.partialNum - 1 : -1;
+
+  for (let i = 0; i < numSlots; i++) {
+    const completed = State.completed[i];
+    const isCurrent = (i === currentSlot);
+    const isExtended = (i >= 8); // partials 9-16
+
+    if (isExtended) {
+      // Partials 9-16: gray, non-interactive
+      if (State.showExtended && State.fundamental) {
+        const freq = midiToFreq(State.fundamental.midi) * (i + 1);
+        const midi = Math.round(12 * Math.log2(freq / 440) + 69);
+        const info = midiToNoteInfo(midi);
+        const vexKey = info.name.replace('#','#').toLowerCase() + '/' + info.octave;
+        const clef = midi >= TREBLE_CUTOFF ? 'treble' : 'bass';
+        const note = new StaveNote({ keys: [vexKey], duration: 'q', clef, stem_direction: clef === 'treble' ? 1 : -1 });
+        // Add accidental if needed
+        if (info.name.includes('#')) {
+          note.addModifier(new Accidental('#'), 0);
+        }
+        note.setStyle({ fillStyle: '#999', strokeStyle: '#999' });
+        note.setStemStyle({ strokeStyle: '#999' });
+        // Store freq for click
+        note._extFreq = freq;
+        if (clef === 'treble') {
+          trebleNotes.push({ note, slot: i });
+          bassNotes.push({ note: new GhostNote('q'), slot: i });
+        } else {
+          bassNotes.push({ note, slot: i });
+          trebleNotes.push({ note: new GhostNote('q'), slot: i });
+        }
+      } else {
+        trebleNotes.push({ note: new GhostNote('q'), slot: i });
+        bassNotes.push({ note: new GhostNote('q'), slot: i });
+      }
+      continue;
+    }
+
+    if (completed) {
+      // Completed partial - show the note
+      const midi = completed.midi;
+      const vexKey = vexKeyFromNote(completed.letter, completed.accidental, completed.octave);
+      const clef = midi >= TREBLE_CUTOFF ? 'treble' : 'bass';
+      const note = new StaveNote({
+        keys: [vexKey],
+        duration: 'q',
+        clef,
+        stem_direction: clef === 'treble' ? 1 : -1
+      });
+      const accStr = intToAccidental(completed.accidental);
+      if (accStr !== 'n') {
+        note.addModifier(new Accidental(accStr), 0);
+      }
+      // Make stems short / hidden
+      note.setStemStyle({ strokeStyle: 'rgba(0,0,0,0.3)' });
+
+      if (clef === 'treble') {
+        trebleNotes.push({ note, slot: i });
+        bassNotes.push({ note: new GhostNote('q'), slot: i });
+      } else {
+        bassNotes.push({ note, slot: i });
+        trebleNotes.push({ note: new GhostNote('q'), slot: i });
+      }
+    } else if (isCurrent) {
+      // Current working note
+      const midi = noteToMidi(State.workLetter, State.workAcc, State.workOctave);
+      const vexKey = vexKeyFromNote(State.workLetter, State.workAcc, State.workOctave);
+      const clef = midi >= TREBLE_CUTOFF ? 'treble' : 'bass';
+      const note = new StaveNote({
+        keys: [vexKey],
+        duration: 'q',
+        clef,
+        stem_direction: clef === 'treble' ? 1 : -1
+      });
+      const accStr = intToAccidental(State.workAcc);
+      if (accStr !== 'n') {
+        note.addModifier(new Accidental(accStr), 0);
+      }
+      // Color the current note
+      note.setStyle({ fillStyle: '#e94560', strokeStyle: '#e94560' });
+      note.setStemStyle({ strokeStyle: '#e94560' });
+
+      if (clef === 'treble') {
+        trebleNotes.push({ note, slot: i });
+        // Ghost in bass if in overlap region C4-F4 (MIDI 60-65)
+        if (State.step === 'A' && midi >= 60 && midi <= 65) {
+          const ghostNote = new StaveNote({ keys: [vexKey], duration: 'q', clef: 'bass', stem_direction: -1 });
+          if (accStr !== 'n') ghostNote.addModifier(new Accidental(accStr), 0);
+          ghostNote.setStyle({ fillStyle: 'rgba(150,150,150,0.4)', strokeStyle: 'rgba(150,150,150,0.4)' });
+          ghostNote.setStemStyle({ strokeStyle: 'rgba(150,150,150,0.4)' });
+          bassNotes.push({ note: ghostNote, slot: i });
+        } else {
+          bassNotes.push({ note: new GhostNote('q'), slot: i });
+        }
+      } else {
+        bassNotes.push({ note, slot: i });
+        // Ghost in treble if in overlap region G3-B3 (MIDI 55-59)
+        if (State.step === 'A' && midi >= 55 && midi <= 59) {
+          const ghostNote = new StaveNote({ keys: [vexKey], duration: 'q', clef: 'treble', stem_direction: 1 });
+          if (accStr !== 'n') ghostNote.addModifier(new Accidental(accStr), 0);
+          ghostNote.setStyle({ fillStyle: 'rgba(150,150,150,0.4)', strokeStyle: 'rgba(150,150,150,0.4)' });
+          ghostNote.setStemStyle({ strokeStyle: 'rgba(150,150,150,0.4)' });
+          trebleNotes.push({ note: ghostNote, slot: i });
+        } else {
+          trebleNotes.push({ note: new GhostNote('q'), slot: i });
+        }
+      }
+    } else {
+      // Empty slot — visible quarter rest placeholder in treble, ghost in bass
+      const rest = new StaveNote({ keys: ['b/4'], duration: 'qr' });
+      rest.setStyle({ fillStyle: '#bbb', strokeStyle: '#bbb' });
+      trebleNotes.push({ note: rest, slot: i });
+      bassNotes.push({ note: new GhostNote('q'), slot: i });
+    }
+  }
+
+  // Create voices
+  const trebleVoice = new Voice({ num_beats: numSlots, beat_value: 4 });
+  trebleVoice.setMode(Voice.Mode.SOFT);
+  trebleVoice.addTickables(trebleNotes.map(n => n.note));
+
+  const bassVoice = new Voice({ num_beats: numSlots, beat_value: 4 });
+  bassVoice.setMode(Voice.Mode.SOFT);
+  bassVoice.addTickables(bassNotes.map(n => n.note));
+
+  const formatWidth = staveWidth - clefWidth - padLeft - padRight;
+  const fmt = new Formatter();
+  fmt.joinVoices([trebleVoice]);
+  fmt.joinVoices([bassVoice]);
+  fmt.format([trebleVoice, bassVoice], formatWidth);
+
+  trebleVoice.draw(ctx, treble);
+  bassVoice.draw(ctx, bass);
+
+  // Update ghost caption
+  if (!State.showExtended && State.step === 'A' && State.currentPartialIdx < State.partials.length) {
+    const midi = noteToMidi(State.workLetter, State.workAcc, State.workOctave);
+    if ((midi >= 55 && midi <= 59) || (midi >= 60 && midi <= 65)) {
+      ghostCaption.textContent = 'Same note in bass or treble clef';
+    } else {
+      ghostCaption.textContent = '';
+    }
+  } else {
+    ghostCaption.textContent = '';
+  }
+}
+
+function vexKeyFromNote(letter, accInt, octave) {
+  const accStr = intToAccidental(accInt);
+  let vexAcc = '';
+  if (accStr === '#') vexAcc = '#';
+  else if (accStr === 'b') vexAcc = 'b';
+  else if (accStr === '##') vexAcc = '##';
+  else if (accStr === 'bb') vexAcc = 'bb';
+  return letter.toLowerCase() + vexAcc + '/' + octave;
+}
+
+// ═══ PIANO KEYBOARD ═══
+const PIANO_START_MIDI = 24; // C1
+const PIANO_END_MIDI = 96;   // C7
+const WHITE_KEY_WIDTH = 28;
+
+let pianoKeys = []; // { midi, element, isBlack }
+
+function buildPiano() {
+  const piano = $('piano');
+  const cMarkers = $('c-markers');
+  piano.innerHTML = '';
+  cMarkers.innerHTML = '';
+  pianoKeys = [];
+
+  // Count white keys
+  let whiteCount = 0;
+  for (let m = PIANO_START_MIDI; m <= PIANO_END_MIDI; m++) {
+    if (!isBlackKey(m)) whiteCount++;
+  }
+
+  const totalWidth = whiteCount * WHITE_KEY_WIDTH;
+  piano.style.width = totalWidth + 'px';
+  cMarkers.style.width = totalWidth + 'px';
+
+  let whiteIdx = 0;
+  for (let m = PIANO_START_MIDI; m <= PIANO_END_MIDI; m++) {
+    const black = isBlackKey(m);
+    const key = document.createElement('div');
+
+    if (!black) {
+      key.className = 'white-key';
+      key.style.left = (whiteIdx * WHITE_KEY_WIDTH) + 'px';
+      key.style.width = WHITE_KEY_WIDTH + 'px';
+
+      // C markers
+      if (m % 12 === 0 && State.reminders) {
+        const marker = document.createElement('span');
+        marker.textContent = 'C' + (Math.floor(m / 12) - 1);
+        marker.style.position = 'absolute';
+        marker.style.left = (whiteIdx * WHITE_KEY_WIDTH) + 'px';
+        marker.style.width = WHITE_KEY_WIDTH + 'px';
+        marker.style.textAlign = 'center';
+        cMarkers.appendChild(marker);
+      }
+
+      whiteIdx++;
+    } else {
+      key.className = 'black-key';
+      // Position black key between previous and current white key
+      const blackLeft = (whiteIdx * WHITE_KEY_WIDTH) - (WHITE_KEY_WIDTH * 0.35);
+      key.style.left = blackLeft + 'px';
+      key.style.width = (WHITE_KEY_WIDTH * 0.65) + 'px';
+    }
+
+    key.dataset.midi = m;
+    key.addEventListener('click', () => onPianoKeyClick(m));
+    piano.appendChild(key);
+    pianoKeys.push({ midi: m, element: key, isBlack: black });
+  }
+}
+
+function isBlackKey(midi) {
+  const pc = midi % 12;
+  return [1,3,6,8,10].includes(pc);
+}
+
+function updateKeyboard() {
+  const currentMidi = noteToMidi(State.workLetter, State.workAcc, State.workOctave);
+
+  pianoKeys.forEach(k => {
+    k.element.classList.remove('highlight', 'counting', 'start-key');
+  });
+
+  // Highlight current pitch
+  const currentKey = pianoKeys.find(k => k.midi === currentMidi);
+  if (currentKey) {
+    currentKey.element.classList.add('highlight');
+    scrollKeyboardToKey(currentKey.element);
+  }
+
+  // Half-step counting highlights
+  if (State.halfStepActive) {
+    const startKey = pianoKeys.find(k => k.midi === State.halfStepStartMidi);
+    if (startKey) startKey.element.classList.add('start-key');
+
+    const countMidi = State.halfStepStartMidi + (State.halfStepCount * State.halfStepDirection);
+    const countKey = pianoKeys.find(k => k.midi === countMidi);
+    if (countKey && countKey !== currentKey) {
+      countKey.element.classList.add('counting');
+    }
+  }
+}
+
+function scrollKeyboardToKey(keyEl) {
+  const scroll = $('keyboard-scroll');
+  const keyLeft = keyEl.offsetLeft;
+  const keyWidth = keyEl.offsetWidth;
+  const scrollLeft = scroll.scrollLeft;
+  const visibleWidth = scroll.clientWidth;
+
+  const keyCenter = keyLeft + keyWidth / 2;
+  const scrollCenter = scrollLeft + visibleWidth / 2;
+
+  if (keyCenter < scrollLeft + 40 || keyCenter > scrollLeft + visibleWidth - 40) {
+    scroll.scrollTo({
+      left: keyCenter - visibleWidth / 2,
+      behavior: 'smooth'
+    });
+  }
+}
+
+function onPianoKeyClick(midi) {
+  playSine(midiToFreq(midi), 300, -18);
+}
+
+// ═══ UI UPDATE ═══
+function updateUI() {
+  const partial = State.partials[State.currentPartialIdx];
+  if (!partial) return;
+
+  const pNum = partial.partialNum;
+  const isFirst = pNum === 1;
+
+  // Instructions
+  instructionH1.textContent = `Notate the ${ordinal(pNum)} partial`;
+
+  if (State.reminders) {
+    instructionH2.style.display = '';
+    instructionH2.textContent = partial.intervalName;
+  } else {
+    instructionH2.style.display = 'none';
+  }
+
+  // Sub-instruction
+  instructionSub.textContent = '';
+  if (State.reminders) {
+    if (pNum === 8) {
+      instructionSub.textContent = "We're skipping to the 8th partial for now.";
+    } else if (pNum === 7) {
+      instructionSub.textContent = "Now go back and fill in the 7th partial. Double-check: major 2nd below the 8th partial (count LEFT by 2 half steps).";
+    } else if (pNum === 6) {
+      instructionSub.textContent = "Double-check: same note class as the 3rd partial, one octave higher.";
+    }
+  }
+
+  // Step labels
+  if (State.reminders) {
+    stepALabel.textContent = isFirst ? 'Step A — Which line/space?' : 'Step A — Which line/space?';
+    stepBLabel.textContent = isFirst ? 'Step B — Which accidental?' : 'Step B — Which accidental?';
+  } else {
+    stepALabel.textContent = 'Step A — Line/space';
+    stepBLabel.textContent = 'Step B — Accidental';
+  }
+
+  // Show/hide panels based on step
+  if (State.step === 'A') {
+    stepAPanel.style.display = '';
+    stepBPanel.style.display = 'none';
+    nextPanel.style.display = 'none';
+    halfstepPanel.classList.remove('visible');
+    enableMoveButtons(true);
+  } else if (State.step === 'B') {
+    stepAPanel.style.display = 'none';
+    stepBPanel.style.display = '';
+    nextPanel.style.display = 'none';
+    halfstepPanel.classList.add('visible');
+    updateAccidentalButtons();
+    enableMoveButtons(false);
+  } else if (State.step === 'done') {
+    stepAPanel.style.display = 'none';
+    stepBPanel.style.display = 'none';
+    nextPanel.style.display = '';
+    halfstepPanel.classList.remove('visible');
+    enableMoveButtons(false);
+  }
+
+  // Hints
+  stepAHint.textContent = '';
+  stepBHint.textContent = '';
+
+  // Half-step tool
+  updateHalfStepTool();
+
+  // Current pitch label
+  $('current-pitch-label').textContent = `Current pitch: ${formatNote(State.workLetter, State.workAcc, State.workOctave)}`;
+
+  // Freq row
+  updateFreqRow();
+
+  // Tutorial progress
+  if (State.mode === 'guided') {
+    tutorialProgress.style.display = '';
+    tutorialProgress.textContent = `Tutorial ${State.tutorialIndex + 1} of ${TUTORIAL_FUNDAMENTALS.length} — Fundamental: ${formatNote(State.fundamental.letter, State.fundamental.accidental, State.fundamental.octave)}`;
+    customPanel.classList.remove('visible');
+  } else {
+    tutorialProgress.style.display = 'none';
+    customPanel.classList.add('visible');
+  }
+
+  // Render notation and keyboard
+  renderNotation();
+  updateKeyboard();
+}
+
+function updateAccidentalButtons() {
+  document.querySelectorAll('.btn-acc').forEach(btn => {
+    const acc = btn.dataset.acc;
+    btn.classList.toggle('selected', intToAccidental(State.workAcc) === acc);
+  });
+}
+
+function updateFreqRow() {
+  freqRow.innerHTML = '';
+  State.completed.forEach((c, i) => {
+    if (c) {
+      const badge = document.createElement('span');
+      badge.className = 'freq-badge';
+      badge.textContent = `P${c.partialNum}: ${Math.round(c.freq)} Hz`;
+      freqRow.appendChild(badge);
+    }
+  });
+}
+
+function enableMoveButtons(enabled) {
+  $('btn-up').disabled = !enabled;
+  $('btn-down').disabled = !enabled;
+}
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+// ═══ HALF-STEP TOOL ═══
+function updateHalfStepTool() {
+  if (State.step !== 'B') return;
+
+  const partial = State.partials[State.currentPartialIdx];
+  if (!partial || partial.partialNum === 1) {
+    halfstepPanel.classList.remove('visible');
+    return;
+  }
+
+  const isActive = State.halfStepActive;
+  $('btn-hs-toggle').textContent = isActive ? 'Close half-steps' : 'Count half-steps';
+  $('btn-hs-toggle').classList.toggle('active', isActive);
+  $('btn-hs-prev').style.display = isActive ? '' : 'none';
+  $('btn-hs-next').style.display = isActive ? '' : 'none';
+
+  if (isActive && State.reminders) {
+    $('halfstep-info').textContent = `Count: ${State.halfStepCount}`;
+    $('halfstep-cheat').textContent = 'Perfect Fifth (P5)=7 | Perfect Fourth (P4)=5 | Major Third (M3)=4 | Minor Third (m3)=3';
+  } else {
+    $('halfstep-info').textContent = '';
+    $('halfstep-cheat').textContent = '';
+  }
+}
+
+$('btn-hs-toggle').addEventListener('click', () => {
+  if (!State.halfStepActive) {
+    // Start counting from the reference note (previous partial)
+    const partial = State.partials[State.currentPartialIdx];
+    if (!partial || !partial.fromPartial) return;
+    // Find the completed partial that is the reference
+    const refPartialNum = partial.fromPartial;
+    const refCompleted = State.completed.find(c => c && c.partialNum === refPartialNum);
+    if (!refCompleted) return;
+    State.halfStepStartMidi = refCompleted.midi;
+    State.halfStepCount = 0;
+    State.halfStepDirection = 1;
+    State.halfStepActive = true;
+  } else {
+    State.halfStepActive = false;
+  }
+  updateUI();
+});
+
+$('btn-hs-next').addEventListener('click', () => {
+  if (!State.halfStepActive) return;
+  State.halfStepCount++;
+  const partial = State.partials[State.currentPartialIdx];
+  const targetHalfSteps = partial.halfSteps;
+  const dur = (State.reminders && State.halfStepCount === targetHalfSteps * State.halfStepDirection) ? 750 : 330;
+  const refFreq = midiToFreq(State.halfStepStartMidi);
+  const curFreq = midiToFreq(State.halfStepStartMidi + State.halfStepCount * State.halfStepDirection);
+  playDyad(refFreq, curFreq, dur);
+  updateUI();
+});
+
+$('btn-hs-prev').addEventListener('click', () => {
+  if (!State.halfStepActive) return;
+  State.halfStepCount--;
+  const partial = State.partials[State.currentPartialIdx];
+  const targetHalfSteps = partial.halfSteps;
+  const dur = (State.reminders && Math.abs(State.halfStepCount) === targetHalfSteps) ? 750 : 330;
+  const refFreq = midiToFreq(State.halfStepStartMidi);
+  const curFreq = midiToFreq(State.halfStepStartMidi + State.halfStepCount * State.halfStepDirection);
+  playDyad(refFreq, curFreq, dur);
+  updateUI();
+});
+
+// ═══ MOVE BUTTONS ═══
+$('btn-up').addEventListener('click', () => moveNote(1));
+$('btn-down').addEventListener('click', () => moveNote(-1));
+
+function moveNote(dir) {
+  if (State.step !== 'A') return;
+
+  // Move by one staff position (letter name)
+  const curLetterIdx = LETTERS.indexOf(State.workLetter);
+  let newLetterIdx = curLetterIdx + dir;
+  let newOctave = State.workOctave;
+
+  if (newLetterIdx > 6) { newLetterIdx = 0; newOctave++; }
+  if (newLetterIdx < 0) { newLetterIdx = 6; newOctave--; }
+
+  // Clamp octave
+  if (newOctave < 0) return;
+  if (newOctave > 8) return;
+
+  State.workLetter = LETTERS[newLetterIdx];
+  State.workOctave = newOctave;
+  // Keep current accidental during Step A
+  // Play the note
+  playSine(midiToFreq(noteToMidi(State.workLetter, State.workAcc, State.workOctave)), 200, -20);
+  clearFeedback();
+  updateUI();
+}
+
+// ═══ CHECK BUTTONS ═══
+$('btn-check-a').addEventListener('click', checkStepA);
+$('btn-check-b').addEventListener('click', checkStepB);
+
+function checkStepA() {
+  const partial = State.partials[State.currentPartialIdx];
+  if (!partial) return;
+
+  const targetLetter = partial.letter;
+  const targetOctave = partial.octave;
+
+  if (partial.partialNum === 1) {
+    // Fundamental: check letter AND octave; then treat accidental too
+    if (State.workLetter === targetLetter) {
+      if (State.workOctave === targetOctave) {
+        // Letter and octave correct, move to Step B
+        showFeedback('Correct line/space!', 'success');
+        State.step = 'B';
+        // Set accidental to natural as starting point
+        State.workAcc = 0;
+        updateUI();
+      } else {
+        showFeedback('Correct note name, wrong octave—move it up/down one octave.', 'warning');
+      }
+    } else {
+      if (State.reminders) {
+        showFeedback(`Place the fundamental ${formatNote(partial.letter, 0, partial.octave)} on the staff. Find the correct line/space for the letter ${targetLetter}.`, 'error');
+      } else {
+        showFeedback('Wrong line/space. Turn Reminders ON for help.', 'error');
+      }
+    }
+    return;
+  }
+
+  // Partials 2-8: check generic interval (letter name and octave)
+  if (State.workLetter === targetLetter && State.workOctave === targetOctave) {
+    showFeedback('Correct line/space!', 'success');
+    State.step = 'B';
+    // Reset accidental to natural
+    State.workAcc = 0;
+    updateUI();
+  } else if (State.workLetter === targetLetter && State.workOctave !== targetOctave) {
+    showFeedback('Correct note name, wrong octave—move it up/down one octave.', 'warning');
+  } else {
+    if (State.reminders) {
+      const gi = partial.genericInterval;
+      stepAHint.innerHTML = `You're trying to create a <strong>${partial.intervalName}</strong> here. That means the generic interval is a ${gi} (count ${gi} lines/spaces including the starting note as 1).`;
+    } else {
+      stepAHint.textContent = 'Wrong line/space. Turn Reminders ON for help.';
+    }
+    showFeedback('Wrong line/space — try again.', 'error');
+  }
+}
+
+function checkStepB() {
+  const partial = State.partials[State.currentPartialIdx];
+  if (!partial) return;
+
+  const targetAcc = partial.accidental;
+  const targetMidi = partial.midi;
+  const currentMidi = noteToMidi(State.workLetter, State.workAcc, State.workOctave);
+
+  // Check enharmonic: right pitch but wrong spelling
+  if (currentMidi === targetMidi && State.workAcc !== targetAcc) {
+    const intervalName = partial.genericInterval > 1 ? ordinal(partial.genericInterval) : '';
+    showFeedback(`Enharmonic warning: right pitch, wrong spelling. The generic interval must be a ${intervalName}, so the letter name must be ${partial.letter}. Fix the spelling.`, 'warning');
+    return;
+  }
+
+  if (State.workAcc === targetAcc) {
+    // Correct!
+    showFeedback(`Correct! ${formatNote(partial.letter, partial.accidental, partial.octave)} — ${ordinal(partial.partialNum)} partial`, 'success');
+
+    // Mark completed
+    State.completed[partial.partialNum - 1] = {
+      partialNum: partial.partialNum,
+      letter: partial.letter,
+      accidental: partial.accidental,
+      octave: partial.octave,
+      midi: partial.midi,
+      freq: partial.freq,
+    };
+
+    State.step = 'done';
+    State.halfStepActive = false;
+
+    // Play the correct frequency
+    playSine(partial.freq, 500, -15);
+
+    updateUI();
+  } else {
+    if (State.reminders) {
+      stepBHint.innerHTML = `<strong>${partial.intervalName}</strong> (${partial.intervalAbbr}) = ${partial.halfSteps} half steps → don't count the first key on piano.`;
+    } else {
+      stepBHint.textContent = 'Wrong accidental. Turn Reminders ON for help.';
+    }
+    showFeedback('Wrong accidental — try again.', 'error');
+  }
+}
+
+// ═══ ACCIDENTAL BUTTONS ═══
+document.querySelectorAll('.btn-acc').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (State.step !== 'B') return;
+    State.workAcc = accidentalToInt(btn.dataset.acc);
+    playSine(midiToFreq(noteToMidi(State.workLetter, State.workAcc, State.workOctave)), 200, -20);
+    updateAccidentalButtons();
+    renderNotation();
+    updateKeyboard();
+  });
+});
+
+// ═══ NEXT PARTIAL ═══
+$('btn-next-partial').addEventListener('click', () => {
+  State.currentPartialIdx++;
+  State.halfStepActive = false;
+
+  if (State.currentPartialIdx >= State.partials.length) {
+    // All 8 done!
+    completeAllPartials();
+    return;
+  }
+
+  // Reset working note to a sensible default
+  const partial = State.partials[State.currentPartialIdx];
+  // Start working note from the fundamental position
+  State.workLetter = State.fundamental.letter;
+  State.workAcc = 0;
+  State.workOctave = State.fundamental.octave;
+  State.step = 'A';
+
+  clearFeedback();
+  updateUI();
+});
+
+function completeAllPartials() {
+  State.showExtended = true;
+  completionMsg.classList.add('visible');
+  stepAPanel.style.display = 'none';
+  stepBPanel.style.display = 'none';
+  nextPanel.style.display = 'none';
+  halfstepPanel.classList.remove('visible');
+  instructionH1.textContent = 'All 8 partials complete!';
+  instructionH2.textContent = '';
+  instructionSub.textContent = '';
+  showFeedback('Great job! The first 8 partials of the harmonic series are mapped.', 'success');
+
+  if (State.mode === 'custom') {
+    State.streak++;
+    $('streak-display').textContent = `Streak: ${State.streak}`;
+  }
+
+  renderNotation();
+  updateFreqRow();
+
+  // Make extended notes clickable
+  setTimeout(() => {
+    // Extended notes (9-16) - add click handlers via SVG
+    // Since VexFlow SVG is tricky, we add a simple approach
+    addExtendedNoteClicks();
+  }, 100);
+
+  // In guided mode, show "Next Tutorial" or "Done"
+  if (State.mode === 'guided') {
+    if (State.tutorialIndex < TUTORIAL_FUNDAMENTALS.length - 1) {
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn btn-next';
+      nextBtn.textContent = 'Next Tutorial →';
+      nextBtn.style.marginTop = '0.5rem';
+      nextBtn.addEventListener('click', () => {
+        State.tutorialIndex++;
+        startTutorial(State.tutorialIndex);
+        completionMsg.classList.remove('visible');
+        nextBtn.remove();
+      });
+      completionMsg.appendChild(nextBtn);
+    } else {
+      const doneMsg = document.createElement('p');
+      doneMsg.style.marginTop = '0.5rem';
+      doneMsg.style.color = 'var(--success)';
+      doneMsg.textContent = 'All 4 tutorials complete! Try Custom Practice for more.';
+      completionMsg.appendChild(doneMsg);
+    }
+  }
+}
+
+function addExtendedNoteClicks() {
+  // For partials 9-16, allow clicking to play their frequency
+  if (!State.fundamental) return;
+  const container = $('notation-panel');
+  container.style.cursor = 'pointer';
+  // Simple: clicking anywhere on the extended notation plays the nearest partial
+  // A more sophisticated approach would detect SVG elements, but for reliability
+  // we'll add a simple row of buttons
+  let extBtnRow = $('ext-freq-btns');
+  if (extBtnRow) extBtnRow.remove();
+
+  extBtnRow = document.createElement('div');
+  extBtnRow.id = 'ext-freq-btns';
+  extBtnRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.5rem 1rem;background:var(--bg2);';
+
+  for (let n = 9; n <= 16; n++) {
+    const freq = midiToFreq(State.fundamental.midi) * n;
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.cssText = 'background:var(--surface);font-size:0.75rem;padding:0.3rem 0.5rem;min-height:32px;';
+    btn.textContent = `P${n}: ${Math.round(freq)} Hz`;
+    btn.addEventListener('click', () => playSine(freq, 400, -18));
+    extBtnRow.appendChild(btn);
+  }
+  completionMsg.after(extBtnRow);
+}
+
+// ═══ FEEDBACK ═══
+function showFeedback(msg, type) {
+  feedbackEl.textContent = msg;
+  feedbackEl.className = type;
+}
+function clearFeedback() {
+  feedbackEl.textContent = '';
+  feedbackEl.className = '';
+}
+
+// ═══ MODE TABS ═══
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const mode = tab.dataset.mode;
+    State.mode = mode;
+
+    if (mode === 'guided') {
+      State.reminders = true;
+      $('reminder-toggle').classList.add('on');
+      $('reminder-toggle').textContent = 'Reminders: ON';
+      startTutorial(State.tutorialIndex);
+    } else {
+      State.reminders = false;
+      $('reminder-toggle').classList.remove('on');
+      $('reminder-toggle').textContent = 'Reminders: OFF';
+      customPanel.classList.add('visible');
+      tutorialProgress.style.display = 'none';
+    }
+    updateUI();
+    buildPiano(); // Rebuild for C markers
+  });
+});
+
+// ═══ REMINDERS TOGGLE ═══
+$('reminder-toggle').addEventListener('click', () => {
+  State.reminders = !State.reminders;
+  const btn = $('reminder-toggle');
+  btn.classList.toggle('on', State.reminders);
+  btn.textContent = State.reminders ? 'Reminders: ON' : 'Reminders: OFF';
+  buildPiano(); // Rebuild for C markers
+  updateUI();
+});
+
+// ═══ CUSTOM PRACTICE ═══
+$('btn-random').addEventListener('click', () => {
+  // Random from C2 to B3
+  const notes = ['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
+  const note = notes[Math.floor(Math.random() * notes.length)];
+  const oct = Math.random() < 0.5 ? 2 : 3;
+  $('fund-note').value = note;
+  $('fund-octave').value = oct;
+});
+
+$('btn-start-custom').addEventListener('click', () => {
+  const noteName = $('fund-note').value;
+  const octave = parseInt($('fund-octave').value);
+  const noteStr = noteName + octave;
+  const fund = parseNote(noteStr);
+  if (!fund) {
+    showToast('Invalid note selection');
+    return;
+  }
+  startCustom(fund);
+});
+
+function startCustom(fund) {
+  State.fundamental = fund;
+  State.partials = computePartials(fund);
+  State.currentPartialIdx = 0;
+  State.completed = new Array(8).fill(null);
+  State.step = 'A';
+  State.showExtended = false;
+  State.halfStepActive = false;
+
+  // Set initial working note
+  State.workLetter = fund.letter;
+  State.workAcc = 0;
+  State.workOctave = fund.octave;
+
+  // Clean up any extended buttons
+  const extBtns = $('ext-freq-btns');
+  if (extBtns) extBtns.remove();
+  completionMsg.classList.remove('visible');
+  // Remove any dynamically added buttons from completionMsg
+  const dynBtns = completionMsg.querySelectorAll('button, p:last-child');
+  dynBtns.forEach(el => { if (el.tagName === 'BUTTON' || (el.tagName === 'P' && el.style.color)) el.remove(); });
+
+  clearFeedback();
+  updateUI();
+}
+
+// ═══ TUTORIAL START ═══
+function startTutorial(index) {
+  State.tutorialIndex = index;
+  const fund = TUTORIAL_FUNDAMENTALS[index];
+  State.fundamental = { ...fund };
+  State.partials = computePartials(fund);
+  State.currentPartialIdx = 0;
+  State.completed = new Array(8).fill(null);
+  State.step = 'A';
+  State.showExtended = false;
+  State.halfStepActive = false;
+
+  // Set initial working note position
+  State.workLetter = fund.letter;
+  State.workAcc = 0;
+  State.workOctave = fund.octave;
+
+  // Clean up
+  const extBtns = $('ext-freq-btns');
+  if (extBtns) extBtns.remove();
+  completionMsg.classList.remove('visible');
+  const dynEls = completionMsg.querySelectorAll('button, p:not(:first-child):not(:nth-child(2))');
+  dynEls.forEach(el => el.remove());
+
+  clearFeedback();
+  buildPiano();
+  updateUI();
+}
+
+// ═══ ADVANCED PANEL ═══
+$('advanced-toggle').addEventListener('click', () => {
+  $('advanced-content').classList.toggle('visible');
+});
+
+// ═══ INITIALIZATION ═══
+function init() {
+  vexflowSelfTest();
+  buildPiano();
+  startTutorial(0);
+}
+
+// Wait for VexFlow to load
+if (typeof Vex !== 'undefined') {
+  init();
+} else {
+  window.addEventListener('load', init);
+}
+</script>
+</body>
+</html>
