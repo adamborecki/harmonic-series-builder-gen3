@@ -19,16 +19,18 @@
 :root {
   --bg: #1a1a2e;
   --bg2: #16213e;
-  --surface: #0f3460;
-  --text: #e0e0e0;
-  --text-dim: #8899aa;
+  --surface: #232640;
+  --surface-border: #383c5c;
+  --text: #e8e8ec;
+  --text-dim: #8b8ea3;
   --accent: #e94560;
   --success: #2ecc71;
-  --warning: #f39c12;
+  --warning: #f5b942;
   --error: #e74c3c;
-  --info: #3498db;
-  --white-key: #f0f0f0;
-  --black-key: #222;
+  --info: #6c6ef5;
+  --info-tint: #b8b9fb;
+  --white-key: #f5f5f7;
+  --black-key: #1c1c1e;
   --key-border: #999;
   --highlight: #e94560;
   --ghost-color: rgba(150,150,150,0.5);
@@ -76,8 +78,13 @@ html, body {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.5rem 1rem;
   background: var(--bg2);
-  border-bottom: 1px solid #333;
   flex-wrap: wrap; gap: 0.5rem;
+}
+#mode-desc {
+  padding: 0 1rem 0.6rem;
+  background: var(--bg2);
+  border-bottom: 1px solid #333;
+  font-size: 0.8rem; color: var(--text-dim);
 }
 .mode-tabs { display: flex; gap: 0.25rem; }
 .mode-tab {
@@ -122,12 +129,14 @@ html, body {
   border-bottom: 1px solid #333;
 }
 #basics-toggle {
-  background: none; border: 1px solid var(--info);
-  color: var(--info); border-radius: 6px;
-  padding: 0.4rem 0.7rem; font-size: 0.85rem;
+  background: var(--surface); border: 1px solid var(--surface-border);
+  color: var(--text); border-radius: 8px;
+  padding: 0.5rem 0.9rem; font-size: 0.85rem; font-weight: 600;
   cursor: pointer; touch-action: manipulation;
+  transition: filter 0.15s;
 }
-#basics-content { display: none; margin-top: 0.6rem; }
+#basics-toggle:hover { filter: brightness(1.15); }
+#basics-content { display: none; margin-top: 0.7rem; }
 #basics-content.visible { display: block; }
 #basics-content p {
   font-size: 0.85rem; color: var(--text);
@@ -136,16 +145,21 @@ html, body {
 #basics-content p:last-child { margin-bottom: 0; }
 
 .basics-tabs {
-  display: flex; flex-wrap: wrap; gap: 0.35rem;
-  margin-bottom: 0.75rem;
+  display: flex; flex-wrap: wrap; gap: 0.2rem;
+  margin-bottom: 0.9rem;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 0.25rem;
 }
 .basics-tab {
-  background: var(--surface); color: var(--text-dim);
-  border: 1px solid #555; border-radius: 6px;
-  padding: 0.35rem 0.6rem; font-size: 0.78rem;
+  background: transparent; color: var(--text-dim);
+  border: none; border-radius: 8px;
+  padding: 0.4rem 0.7rem; font-size: 0.78rem; font-weight: 600;
   cursor: pointer; touch-action: manipulation;
+  transition: background 0.15s, color 0.15s;
 }
-.basics-tab.active { background: var(--info); border-color: var(--info); color: #fff; }
+.basics-tab:hover { color: var(--text); }
+.basics-tab.active { background: var(--info); color: #fff; }
 .basics-pane { display: none; }
 .basics-pane.active { display: block; }
 
@@ -244,24 +258,34 @@ html, body {
 
 /* ── Buttons ── */
 .btn {
-  border: none; border-radius: 8px;
+  border: 1px solid transparent; border-radius: 10px;
   padding: 0.6rem 1.2rem;
   font-size: 0.95rem; font-weight: 600;
-  cursor: pointer; transition: all 0.1s;
+  cursor: pointer; transition: filter 0.15s, transform 0.1s, border-color 0.15s;
   color: #fff; min-width: 44px; min-height: 44px;
   display: inline-flex; align-items: center; justify-content: center;
   gap: 0.3rem;
   touch-action: manipulation;
 }
-.btn:active { transform: scale(0.95); }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.btn-move { background: var(--surface); font-size: 1.1rem; }
+.btn:hover { filter: brightness(1.12); }
+.btn:active { transform: scale(0.96); filter: brightness(0.95); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+.btn-move {
+  background: var(--surface); border-color: var(--surface-border);
+  color: var(--text); font-size: 1.1rem;
+}
 .btn-check { background: var(--info); }
 .btn-next { background: var(--success); }
-.btn-acc { background: var(--surface); min-width: 52px; font-size: 1rem; }
-.btn-acc.selected { background: var(--accent); }
-.btn-halfstep { background: var(--surface); font-size: 0.85rem; padding: 0.5rem 0.8rem; }
-.btn-halfstep.active { background: var(--accent); }
+.btn-acc {
+  background: var(--surface); border-color: var(--surface-border);
+  color: var(--text); min-width: 52px; font-size: 1rem;
+}
+.btn-acc.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-halfstep {
+  background: var(--surface); border-color: var(--surface-border);
+  color: var(--text); font-size: 0.85rem; padding: 0.5rem 0.8rem;
+}
+.btn-halfstep.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* ── Feedback messages ── */
 #feedback {
@@ -272,9 +296,9 @@ html, body {
   display: flex; align-items: center;
 }
 #feedback.success { background: rgba(46,204,113,0.15); color: var(--success); }
-#feedback.warning { background: rgba(243,156,18,0.15); color: var(--warning); }
+#feedback.warning { background: rgba(245,185,66,0.15); color: var(--warning); }
 #feedback.error { background: rgba(231,76,60,0.15); color: var(--error); }
-#feedback.info { background: rgba(52,152,219,0.15); color: var(--info); }
+#feedback.info { background: rgba(108,110,245,0.15); color: var(--info); }
 
 /* ── Half-step tool panel ── */
 #halfstep-panel {
@@ -339,8 +363,8 @@ html, body {
   touch-action: manipulation;
 }
 .white-key.highlight { background: var(--highlight); }
-.white-key.counting { background: #ffcc00; }
-.white-key.start-key { background: #aaddff; }
+.white-key.counting { background: var(--warning); }
+.white-key.start-key { background: var(--info-tint); }
 .white-key:active { background: #ddd; }
 .black-key {
   position: absolute;
@@ -354,24 +378,9 @@ html, body {
   touch-action: manipulation;
 }
 .black-key.highlight { background: var(--highlight); }
-.black-key.counting { background: #ffcc00; }
-.black-key.start-key { background: #aaddff; }
+.black-key.counting { background: var(--warning); }
+.black-key.start-key { background: var(--info-tint); }
 .black-key:active { background: #444; }
-
-/* ── Advanced / info panel ── */
-#advanced-panel {
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
-  color: var(--text-dim);
-}
-#advanced-toggle {
-  background: none; border: 1px solid #555;
-  color: var(--text-dim); border-radius: 6px;
-  padding: 0.3rem 0.6rem; font-size: 0.8rem;
-  cursor: pointer; margin-bottom: 0.5rem;
-}
-#advanced-content { display: none; }
-#advanced-content.visible { display: block; }
 
 /* ── Completion message ── */
 #completion-msg {
@@ -422,10 +431,11 @@ html, body {
   </div>
   <button id="reminder-toggle" class="on">Reminders: ON</button>
 </div>
+<div id="mode-desc"></div>
 
 <!-- ═══ Beginner Basics ═══ -->
 <div id="basics-panel">
-  <button id="basics-toggle">&#x1F393; New to music theory? Quick basics</button>
+  <button id="basics-toggle">&#x1F4D6; Music Theory Refresher</button>
   <div id="basics-content">
     <div class="basics-tabs">
       <button class="basics-tab active" data-tab="partial">What's a partial?</button>
@@ -437,6 +447,7 @@ html, body {
 
     <div class="basics-pane active" data-pane="partial">
       <p>When any instrument plays a note, it's actually sounding a whole stack of higher pitches at once, layered quietly on top of the main note. These are called partials (or harmonics/overtones). The 1st partial is the main note itself (the "fundamental"); the 2nd is exactly double its frequency, the 3rd is triple, and so on. This tool has you notate where partials 1–8 land on the staff.</p>
+      <p class="basics-note">Each partial's ratio to the one right before it: 2:1 (octave), 3:2 (P5), 4:3 (P4), 5:4 (M3), 6:5 (m3), 8:6 = 4:3 (P4 again), 7:8 (M2, going down). That's the same sequence of intervals you'll be counting on the staff, in order.</p>
     </div>
 
     <div class="basics-pane" data-pane="steps">
@@ -445,10 +456,22 @@ html, body {
 
     <div class="basics-pane" data-pane="notes">
       <p>The seven letter names A–G repeat up the keyboard. A <strong>sharp (&#x266F;)</strong> raises a note one half step; a <strong>flat (&#x266D;)</strong> lowers it one half step; a <strong>natural (&#x266E;)</strong> means neither. This tool separates the two decisions: Step A is "which line or space" (the letter name), Step B is "which accidental" (sharp/flat/natural).</p>
+      <p class="basics-note">Scientific pitch notation: C4 is middle C, and each octave is numbered starting at C — so B3 sits directly below middle C, and C5 sits an octave above it.</p>
     </div>
 
     <div class="basics-pane" data-pane="staff">
       <p>Lines and spaces each represent one letter name, alternating up the staff. The treble clef (top) is for higher notes, the bass clef (bottom) for lower ones — together they form the "grand staff" shown here.</p>
+      <p>A quick way to remember which letter is which — read bottom to top:</p>
+      <div class="interval-table">
+        <div class="interval-row core"><span>Treble lines</span><span>E G B D F</span></div>
+        <div class="interval-row extra"><span>"Every Good Boy Does Fine"</span></div>
+        <div class="interval-row core"><span>Treble spaces</span><span>F A C E</span></div>
+        <div class="interval-row extra"><span>spells "FACE"</span></div>
+        <div class="interval-row core"><span>Bass lines</span><span>G B D F A</span></div>
+        <div class="interval-row extra"><span>"Good Boys Do Fine Always"</span></div>
+        <div class="interval-row core"><span>Bass spaces</span><span>A C E G</span></div>
+        <div class="interval-row extra"><span>"All Cows Eat Grass"</span></div>
+      </div>
     </div>
 
     <div class="basics-pane" data-pane="intervals">
@@ -467,7 +490,7 @@ html, body {
 </div>
 
 <!-- ═══ Tutorial Progress ═══ -->
-<div id="tutorial-progress">Tutorial 1 of 4 — Fundamental: B3</div>
+<div id="tutorial-progress">Tutorial 1 of 5 — Fundamental: C3</div>
 
 <!-- ═══ Custom Practice Panel ═══ -->
 <div id="custom-panel">
@@ -566,15 +589,6 @@ html, body {
   <h2>All 8 Partials Complete!</h2>
   <p>More partials continue (whole-tone-ish, then chromatic-ish, then microtonal).</p>
   <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-dim);">Partials 9–16 shown below in gray. Click to hear their frequencies.</p>
-</div>
-
-<!-- ═══ Advanced panel ═══ -->
-<div id="advanced-panel">
-  <button id="advanced-toggle">&#x2139;&#xFE0F; Advanced Info</button>
-  <div id="advanced-content">
-    <p><strong>Scientific pitch notation:</strong> C4 is middle C. B3 is directly below middle C.</p>
-    <p>Ratios: 1:1, 2:1, 3:2, 4:2, 5:4, 6:5 (=3:1 octave), 8:4 (=2:1 three oct), 7:4</p>
-  </div>
 </div>
 
 <!-- ═══ Toast ═══ -->
@@ -789,7 +803,11 @@ function computeSpelling(fundNote, partialNum, midi) {
 }
 
 // ── Guided Tutorial fundamentals ──
+// C3 goes first, deliberately easy (no accidentals) so a first-time user can
+// get comfortable with the interface before facing fundamentals that need
+// sharps/flats right away.
 const TUTORIAL_FUNDAMENTALS = [
+  parseNote('C3'),
   parseNote('B2'),
   parseNote('Eb2'),
   parseNote('C2'),
@@ -1739,7 +1757,7 @@ function completeAllPartials() {
       const doneMsg = document.createElement('p');
       doneMsg.style.marginTop = '0.5rem';
       doneMsg.style.color = 'var(--success)';
-      doneMsg.textContent = 'All 4 tutorials complete! Try Custom Practice for more.';
+      doneMsg.textContent = `All ${TUTORIAL_FUNDAMENTALS.length} tutorials complete! Try Custom Practice for more.`;
       completionMsg.appendChild(doneMsg);
     }
   }
@@ -1802,10 +1820,20 @@ document.querySelectorAll('.mode-tab').forEach(tab => {
       customPanel.classList.add('visible');
       tutorialProgress.style.display = 'none';
     }
+    updateModeDesc();
     updateUI();
     buildPiano(); // Rebuild for C markers
   });
 });
+
+function updateModeDesc() {
+  const el = $('mode-desc');
+  if (State.mode === 'guided') {
+    el.textContent = `In Guided Tutorial, work through all ${TUTORIAL_FUNDAMENTALS.length} fundamentals in order — each one adds a wrinkle, starting easy (plain C, no accidentals) and building up from there.`;
+  } else {
+    el.textContent = "In Custom Practice, pick any fundamental note and build out its full harmonic series on your own — reminders are off by default.";
+  }
+}
 
 // ═══ REMINDERS TOGGLE ═══
 $('reminder-toggle').addEventListener('click', () => {
@@ -1894,11 +1922,6 @@ function startTutorial(index) {
   updateUI();
 }
 
-// ═══ ADVANCED PANEL ═══
-$('advanced-toggle').addEventListener('click', () => {
-  $('advanced-content').classList.toggle('visible');
-});
-
 // ═══ BEGINNER BASICS PANEL ═══
 $('basics-toggle').addEventListener('click', () => {
   $('basics-content').classList.toggle('visible');
@@ -1917,6 +1940,7 @@ document.querySelectorAll('.basics-tab').forEach(tab => {
 function init() {
   vexflowSelfTest();
   buildPiano();
+  updateModeDesc();
   startTutorial(0);
 }
 
