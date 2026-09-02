@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Harmonic Series Builder — Staff + Keyboard</title>
 
 <!-- VexFlow 4.x for notation -->
@@ -42,6 +42,7 @@ html, body {
   line-height: 1.4;
   overflow-x: hidden;
   min-height: 100vh;
+  touch-action: manipulation;
 }
 
 /* ── Audio overlay ── */
@@ -114,6 +115,55 @@ html, body {
 #custom-panel button { background: var(--accent); border-color: var(--accent); color: #fff; }
 #streak-display { font-size: 0.85rem; color: var(--text-dim); margin-left: auto; }
 
+/* ── Beginner basics panel ── */
+#basics-panel {
+  padding: 0.5rem 1rem;
+  background: var(--bg2);
+  border-bottom: 1px solid #333;
+}
+#basics-toggle {
+  background: none; border: 1px solid var(--info);
+  color: var(--info); border-radius: 6px;
+  padding: 0.4rem 0.7rem; font-size: 0.85rem;
+  cursor: pointer; touch-action: manipulation;
+}
+#basics-content { display: none; margin-top: 0.6rem; }
+#basics-content.visible { display: block; }
+#basics-content p {
+  font-size: 0.85rem; color: var(--text);
+  margin-bottom: 0.6rem; line-height: 1.5;
+}
+#basics-content p:last-child { margin-bottom: 0; }
+
+.basics-tabs {
+  display: flex; flex-wrap: wrap; gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+.basics-tab {
+  background: var(--surface); color: var(--text-dim);
+  border: 1px solid #555; border-radius: 6px;
+  padding: 0.35rem 0.6rem; font-size: 0.78rem;
+  cursor: pointer; touch-action: manipulation;
+}
+.basics-tab.active { background: var(--info); border-color: var(--info); color: #fff; }
+.basics-pane { display: none; }
+.basics-pane.active { display: block; }
+
+.interval-table {
+  margin: 0.5rem 0 0.6rem;
+  border: 1px solid #333; border-radius: 6px;
+  overflow: hidden;
+}
+.interval-row {
+  display: flex; justify-content: space-between;
+  padding: 0.4rem 0.6rem; font-size: 0.85rem;
+  border-bottom: 1px solid #333;
+}
+.interval-row:last-child { border-bottom: none; }
+.interval-row.core { background: rgba(52,152,219,0.12); color: #fff; font-weight: 700; }
+.interval-row.extra { color: var(--text-dim); font-size: 0.8rem; }
+.basics-note { font-size: 0.78rem; color: var(--text-dim); font-style: italic; }
+
 /* ── Tutorial progress ── */
 #tutorial-progress {
   padding: 0.5rem 1rem;
@@ -139,6 +189,9 @@ html, body {
   font-size: 0.85rem; color: var(--info);
   font-style: italic;
 }
+/* Reserve room for ~2 lines so the grand staff below doesn't jump around
+   as this text's length varies between steps. */
+#instruction-sub.reserve-space { min-height: 2.4rem; }
 
 /* ── Notation panel ── */
 #notation-panel {
@@ -198,6 +251,7 @@ html, body {
   color: #fff; min-width: 44px; min-height: 44px;
   display: inline-flex; align-items: center; justify-content: center;
   gap: 0.3rem;
+  touch-action: manipulation;
 }
 .btn:active { transform: scale(0.95); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
@@ -282,6 +336,7 @@ html, body {
   cursor: pointer;
   z-index: 1;
   transition: background 0.1s;
+  touch-action: manipulation;
 }
 .white-key.highlight { background: var(--highlight); }
 .white-key.counting { background: #ffcc00; }
@@ -296,6 +351,7 @@ html, body {
   cursor: pointer;
   z-index: 2;
   transition: background 0.1s;
+  touch-action: manipulation;
 }
 .black-key.highlight { background: var(--highlight); }
 .black-key.counting { background: #ffcc00; }
@@ -365,6 +421,49 @@ html, body {
     <button class="mode-tab" data-mode="custom">Custom Practice</button>
   </div>
   <button id="reminder-toggle" class="on">Reminders: ON</button>
+</div>
+
+<!-- ═══ Beginner Basics ═══ -->
+<div id="basics-panel">
+  <button id="basics-toggle">&#x1F393; New to music theory? Quick basics</button>
+  <div id="basics-content">
+    <div class="basics-tabs">
+      <button class="basics-tab active" data-tab="partial">What's a partial?</button>
+      <button class="basics-tab" data-tab="steps">Half &amp; whole steps</button>
+      <button class="basics-tab" data-tab="notes">Note names</button>
+      <button class="basics-tab" data-tab="staff">Reading the staff</button>
+      <button class="basics-tab" data-tab="intervals">Counting intervals</button>
+    </div>
+
+    <div class="basics-pane active" data-pane="partial">
+      <p>When any instrument plays a note, it's actually sounding a whole stack of higher pitches at once, layered quietly on top of the main note. These are called partials (or harmonics/overtones). The 1st partial is the main note itself (the "fundamental"); the 2nd is exactly double its frequency, the 3rd is triple, and so on. This tool has you notate where partials 1–8 land on the staff.</p>
+    </div>
+
+    <div class="basics-pane" data-pane="steps">
+      <p>A half step is the smallest distance between two notes on a piano — one key to the very next key, black or white, with nothing in between. A whole step is two half steps. On the piano at the bottom of the screen, every adjacent key (white-to-black or white-to-white where there's no black key between, like E→F) is a half step.</p>
+    </div>
+
+    <div class="basics-pane" data-pane="notes">
+      <p>The seven letter names A–G repeat up the keyboard. A <strong>sharp (&#x266F;)</strong> raises a note one half step; a <strong>flat (&#x266D;)</strong> lowers it one half step; a <strong>natural (&#x266E;)</strong> means neither. This tool separates the two decisions: Step A is "which line or space" (the letter name), Step B is "which accidental" (sharp/flat/natural).</p>
+    </div>
+
+    <div class="basics-pane" data-pane="staff">
+      <p>Lines and spaces each represent one letter name, alternating up the staff. The treble clef (top) is for higher notes, the bass clef (bottom) for lower ones — together they form the "grand staff" shown here.</p>
+    </div>
+
+    <div class="basics-pane" data-pane="intervals">
+      <p><strong>Generic interval (counting on the staff):</strong> Count every line and space between the two notes, including the starting note as "1" — don't count from zero. So an octave, even though it's "8 notes away," is counted 1‑2‑3‑4‑5‑6‑7‑8, with the starting note itself as the first count. A third spans 3 letter names, a fifth spans 5, and so on — this only depends on how many lines/spaces you cross, not on any sharps or flats.</p>
+      <p><strong>Specific interval (counting half steps):</strong> Once you know the generic size, you need to know exactly how many half steps make it major, minor, or perfect. These three come up constantly in the harmonic series above — worth memorizing cold:</p>
+      <div class="interval-table">
+        <div class="interval-row core"><span>Minor Third (m3)</span><span>3 half steps</span></div>
+        <div class="interval-row core"><span>Major Third (M3)</span><span>4 half steps</span></div>
+        <div class="interval-row core"><span>Perfect Fifth (P5)</span><span>7 half steps</span></div>
+        <div class="interval-row extra"><span>Major Second (M2)</span><span>2 half steps</span></div>
+        <div class="interval-row extra"><span>Perfect Fourth (P4)</span><span>5 half steps</span></div>
+      </div>
+      <p class="basics-note">The two smaller ones above come up less often here (mainly around the 7th and 8th partials) — good to recognize, lower priority to memorize than the top three.</p>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ Tutorial Progress ═══ -->
@@ -531,18 +630,45 @@ function formatNote(letter, acc, octave) {
   return letter + accidentalDisplay(intToAccidental(acc)) + octave;
 }
 
+// Given two spelled notes, describe the interval between them the way a student
+// would count it: always relative to the note that comes immediately before it
+// on screen, never jumping back to the fundamental or some other earlier note.
+const INTERVAL_NAMES = {
+  '1_0': { name: 'Unison', abbr: 'P1' },
+  '2_1': { name: 'Minor Second', abbr: 'm2' },
+  '2_2': { name: 'Major Second', abbr: 'M2' },
+  '3_3': { name: 'Minor Third', abbr: 'm3' },
+  '3_4': { name: 'Major Third', abbr: 'M3' },
+  '4_5': { name: 'Perfect Fourth', abbr: 'P4' },
+  '5_7': { name: 'Perfect Fifth', abbr: 'P5' },
+  '6_8': { name: 'Minor Sixth', abbr: 'm6' },
+  '6_9': { name: 'Major Sixth', abbr: 'M6' },
+  '8_12': { name: 'Octave', abbr: 'P8' },
+};
+function intervalInfoBetween(prev, cur) {
+  const prevAbsLetter = prev.octave * 7 + LETTERS.indexOf(prev.letter);
+  const curAbsLetter = cur.octave * 7 + LETTERS.indexOf(cur.letter);
+  const letterDiff = curAbsLetter - prevAbsLetter;
+  const genericInterval = Math.abs(letterDiff) + 1;
+  const halfStepsSigned = cur.midi - prev.midi;
+  const halfSteps = Math.abs(halfStepsSigned);
+  const direction = halfStepsSigned < 0 ? -1 : 1;
+  const key = genericInterval + '_' + halfSteps;
+  const info = INTERVAL_NAMES[key] || { name: `${ordinal(genericInterval)} (${halfSteps} half steps)`, abbr: '' };
+  return { intervalName: info.name, intervalAbbr: info.abbr, halfSteps, genericInterval, direction };
+}
+
 // ── Harmonic series calculation ──
 // Given a fundamental MIDI note, compute the target note for each partial (1-8)
 // partial n: frequency = fundamental_freq * n
 // We find the closest MIDI note and the required spelling
 function computePartials(fundNote) {
   const fundFreq = midiToFreq(fundNote.midi);
-  const fundLetter = fundNote.letter;
-  const fundAcc = fundNote.accidental;
 
   // partial order for the UI: [1,2,3,4,5,6,8,7]
   const partialNums = [1,2,3,4,5,6,8,7];
   const results = [];
+  let prev = null;
 
   for (const n of partialNums) {
     const freq = fundFreq * n;
@@ -550,9 +676,18 @@ function computePartials(fundNote) {
     const midi = Math.round(12 * Math.log2(freq / 440) + 69);
     const centsOff = Math.round(1200 * Math.log2(freq / midiToFreq(midi)));
 
-    // Determine correct spelling based on interval from previous partial
+    // Correct staff spelling (letter/accidental/octave) — derived via the
+    // established harmonic reference chain, always enharmonically correct.
     let spelling = computeSpelling(fundNote, n, midi);
-    results.push({
+
+    // The interval the student sees is always relative to the *previous*
+    // partial shown on screen, so the hint text never has to jump between
+    // "the fundamental" and "the previous partial" and back.
+    const displayInfo = prev
+      ? intervalInfoBetween(prev, { letter: spelling.letter, octave: spelling.octave, midi })
+      : { intervalName: 'Fundamental', intervalAbbr: '', halfSteps: 0, genericInterval: 1, direction: 1 };
+
+    const entry = {
       partialNum: n,
       freq,
       midi,
@@ -560,12 +695,15 @@ function computePartials(fundNote) {
       letter: spelling.letter,
       accidental: spelling.accidental,
       octave: spelling.octave,
-      intervalName: spelling.intervalName,
-      intervalAbbr: spelling.intervalAbbr,
-      halfSteps: spelling.halfSteps,
-      genericInterval: spelling.genericInterval,
-      fromPartial: spelling.fromPartial,
-    });
+      intervalName: displayInfo.intervalName,
+      intervalAbbr: displayInfo.intervalAbbr,
+      halfSteps: displayInfo.halfSteps,
+      genericInterval: displayInfo.genericInterval,
+      direction: displayInfo.direction,
+      fromPartial: prev ? prev.partialNum : null,
+    };
+    results.push(entry);
+    prev = entry;
   }
   return results;
 }
@@ -609,60 +747,43 @@ function computeSpelling(fundNote, partialNum, midi) {
     return { letter: newLetter, accidental: neededAcc, octave: oct };
   }
 
-  let result;
   switch (partialNum) {
     case 1: // Fundamental itself
-      result = { ...fundNote };
-      result.intervalName = 'Fundamental';
-      result.intervalAbbr = '';
-      result.halfSteps = 0;
-      result.genericInterval = 1;
-      result.fromPartial = null;
-      return result;
+      return { ...fundNote };
 
     case 2: // Octave above fundamental
-      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 1,
-               intervalName: 'Octave', intervalAbbr: 'P8', halfSteps: 12, genericInterval: 8, fromPartial: 1 };
+      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 1 };
 
     case 3: { // P5 above 2nd partial
       // 2nd partial letter = fund letter, one octave up
       const p2Oct = fundOct + 1;
-      const s = spellFromInterval(4, midi, fundLetter, fundAcc, p2Oct);
-      return { ...s, intervalName: 'Perfect Fifth', intervalAbbr: 'P5', halfSteps: 7, genericInterval: 5, fromPartial: 2 };
+      return spellFromInterval(4, midi, fundLetter, fundAcc, p2Oct);
     }
 
     case 4: // Two octaves above fundamental
-      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 2,
-               intervalName: 'Two Octaves', intervalAbbr: 'P8', halfSteps: 12, genericInterval: 8, fromPartial: 2 };
+      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 2 };
 
     case 5: { // Major third above 4th partial
       const p4Oct = fundOct + 2;
-      const s = spellFromInterval(2, midi, fundLetter, fundAcc, p4Oct);
-      return { ...s, intervalName: 'Major Third', intervalAbbr: 'M3', halfSteps: 4, genericInterval: 3, fromPartial: 4 };
+      return spellFromInterval(2, midi, fundLetter, fundAcc, p4Oct);
     }
 
-    case 6: { // m3 above 5th partial — "Perfect Fifth (again)"
-      // 5th partial = M3 above 4th partial
+    case 6: { // m3 above 5th partial (5th partial = M3 above 4th partial)
       const p4Oct = fundOct + 2;
       const p5Spelling = spellFromInterval(2, Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 5 / 440) + 69), fundLetter, fundAcc, p4Oct);
-      const s = spellFromInterval(2, midi, p5Spelling.letter, p5Spelling.accidental, p5Spelling.octave);
-      return { ...s, intervalName: 'Perfect Fifth (again)', intervalAbbr: 'm3', halfSteps: 3, genericInterval: 3, fromPartial: 5 };
+      return spellFromInterval(2, midi, p5Spelling.letter, p5Spelling.accidental, p5Spelling.octave);
     }
 
     case 8: // Three octaves above fundamental
-      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 3,
-               intervalName: 'Three Octaves', intervalAbbr: 'P8', halfSteps: 12, genericInterval: 8, fromPartial: 4 };
+      return { letter: fundLetter, accidental: fundAcc, octave: fundOct + 3 };
 
-    case 7: { // m3 above 6th partial — "Harmonic Seventh"
-      // 6th partial
-      const p6Midi = Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 6 / 440) + 69);
-      // 6th partial spelling: need 5th partial first
+    case 7: { // m3 above 6th partial — the "harmonic seventh" (out of tune)
       const p4Oct = fundOct + 2;
       const p5Midi = Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 5 / 440) + 69);
       const p5Spelling = spellFromInterval(2, p5Midi, fundLetter, fundAcc, p4Oct);
+      const p6Midi = Math.round(12 * Math.log2(midiToFreq(fundNote.midi) * 6 / 440) + 69);
       const p6Spelling = spellFromInterval(2, p6Midi, p5Spelling.letter, p5Spelling.accidental, p5Spelling.octave);
-      const s = spellFromInterval(2, midi, p6Spelling.letter, p6Spelling.accidental, p6Spelling.octave);
-      return { ...s, intervalName: 'Harmonic Seventh (out of tune)', intervalAbbr: 'm3', halfSteps: 3, genericInterval: 3, fromPartial: 6 };
+      return spellFromInterval(2, midi, p6Spelling.letter, p6Spelling.accidental, p6Spelling.octave);
     }
   }
 }
@@ -727,11 +848,30 @@ const completionMsg = $('completion-msg');
 const vexOutput = $('vex-output');
 
 // ═══ AUDIO ═══
+// Reuse a single persistent synth per voice instead of building a fresh
+// Oscillator+Envelope on every call — this app calls playSine/playDyad on
+// every arrow-key nudge, button click, and half-step count, and disposable
+// nodes that never get torn down pile up into audible clicks/pops over a
+// session.
 let audioStarted = false;
+let sineSynth = null;
+let dyadSynth = null;
 
 async function initAudio() {
   try {
     await Tone.start();
+    if (!sineSynth) {
+      sineSynth = new Tone.Synth({
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.015, decay: 0.01, sustain: 1.0, release: 0.05 }
+      }).toDestination();
+    }
+    if (!dyadSynth) {
+      dyadSynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.015, decay: 0.01, sustain: 1.0, release: 0.05 }
+      }).toDestination();
+    }
     audioStarted = true;
     State.audioEnabled = true;
   } catch(e) {
@@ -740,38 +880,18 @@ async function initAudio() {
 }
 
 function playSine(freq, durationMs = 300, volume = -18) {
-  if (!audioStarted) return;
+  if (!audioStarted || !sineSynth) return;
   try {
-    const now = Tone.now();
-    const dur = durationMs / 1000;
-    const env = new Tone.AmplitudeEnvelope({
-      attack: 0.015, decay: 0.01, sustain: 1.0, release: 0.015
-    }).toDestination();
-    const osc = new Tone.Oscillator(freq, 'sine').connect(env);
-    osc.volume.value = volume;
-    osc.start(now);
-    env.triggerAttack(now);
-    env.triggerRelease(now + dur);
-    osc.stop(now + dur + 0.05);
+    sineSynth.volume.value = volume;
+    sineSynth.triggerAttackRelease(freq, durationMs / 1000);
   } catch(e) { /* ignore audio errors */ }
 }
 
 function playDyad(freq1, freq2, durationMs = 330, volume = -18) {
-  if (!audioStarted) return;
+  if (!audioStarted || !dyadSynth) return;
   try {
-    const now = Tone.now();
-    const dur = durationMs / 1000;
-    [freq1, freq2].forEach(f => {
-      const env = new Tone.AmplitudeEnvelope({
-        attack: 0.015, decay: 0.01, sustain: 1.0, release: 0.015
-      }).toDestination();
-      const osc = new Tone.Oscillator(f, 'sine').connect(env);
-      osc.volume.value = volume;
-      osc.start(now);
-      env.triggerAttack(now);
-      env.triggerRelease(now + dur);
-      osc.stop(now + dur + 0.05);
-    });
+    dyadSynth.volume.value = volume;
+    dyadSynth.triggerAttackRelease([freq1, freq2], durationMs / 1000);
   } catch(e) { /* ignore */ }
 }
 
@@ -1157,7 +1277,61 @@ function scrollKeyboardToKey(keyEl) {
 
 function onPianoKeyClick(midi) {
   playSine(midiToFreq(midi), 300, -18);
+
+  if (State.step === 'A') {
+    if (!isBlackKey(midi)) {
+      // Natural key: letter/octave are unambiguous, so jump straight there
+      // instead of making the student step through every line/space.
+      const info = midiToNoteInfo(midi);
+      State.workLetter = info.name;
+      State.workOctave = info.octave;
+      clearFeedback();
+      updateUI();
+    }
+    // Black keys are ambiguous as a bare letter/octave (could be the sharp of
+    // one letter or the flat of the next), so during Step A we just play the
+    // pitch and leave letter selection to the step buttons or a white key.
+  } else if (State.step === 'B') {
+    const naturalMidi = noteToMidi(State.workLetter, 0, State.workOctave);
+    const neededAcc = midi - naturalMidi;
+    if (neededAcc >= -2 && neededAcc <= 2) {
+      State.workAcc = neededAcc;
+      updateAccidentalButtons();
+      renderNotation();
+      updateKeyboard();
+    } else {
+      showToast(`That's too far from ${State.workLetter}${State.workOctave} for an accidental — use the buttons above.`);
+    }
+  }
 }
+
+// ═══ KEYBOARD (arrow key) INPUT ═══
+document.addEventListener('keydown', (e) => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    const dir = e.key === 'ArrowUp' ? 1 : -1;
+    if (State.step === 'A') {
+      moveNote(dir);
+    } else if (State.step === 'B') {
+      const newAcc = Math.max(-2, Math.min(2, State.workAcc + dir));
+      if (newAcc !== State.workAcc) {
+        State.workAcc = newAcc;
+        playSine(midiToFreq(noteToMidi(State.workLetter, State.workAcc, State.workOctave)), 200, -20);
+        updateAccidentalButtons();
+        renderNotation();
+        updateKeyboard();
+      }
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (State.step === 'A') checkStepA();
+    else if (State.step === 'B') checkStepB();
+    else if (State.step === 'done') $('btn-next-partial').click();
+  }
+});
 
 // ═══ UI UPDATE ═══
 function updateUI() {
@@ -1177,15 +1351,24 @@ function updateUI() {
     instructionH2.style.display = 'none';
   }
 
-  // Sub-instruction
+  // Sub-instruction — always tells a new user what to do right now, so this
+  // area shows one line at a time (never stacked with the step hints below)
+  // and its height stays roughly constant instead of yanking the staff
+  // around as the text changes length.
   instructionSub.textContent = '';
+  instructionSub.classList.toggle('reserve-space', State.reminders);
   if (State.reminders) {
     if (pNum === 8) {
-      instructionSub.textContent = "We're skipping to the 8th partial for now.";
+      instructionSub.textContent = `Skipping ahead — it's a ${partial.intervalName.toLowerCase()} above the 6th partial, which makes the 7th easier to find next.`;
     } else if (pNum === 7) {
-      instructionSub.textContent = "Now go back and fill in the 7th partial. Double-check: major 2nd below the 8th partial (count LEFT by 2 half steps).";
-    } else if (pNum === 6) {
-      instructionSub.textContent = "Double-check: same note class as the 3rd partial, one octave higher.";
+      const dirWord = partial.direction < 0 ? 'below' : 'above';
+      instructionSub.textContent = `Now fill in the 7th — a ${partial.intervalName.toLowerCase()} ${dirWord} the 8th (${partial.halfSteps} half steps ${partial.direction < 0 ? 'down' : 'up'}).`;
+    } else if (State.step === 'A') {
+      instructionSub.textContent = 'Move the note below to the right line/space, then tap Check.';
+    } else if (State.step === 'B') {
+      instructionSub.textContent = 'Pick the correct accidental below, then tap Check.';
+    } else if (State.step === 'done') {
+      instructionSub.textContent = 'Correct! Tap Next partial to continue.';
     }
   }
 
@@ -1296,7 +1479,7 @@ function updateHalfStepTool() {
 
   if (isActive && State.reminders) {
     $('halfstep-info').textContent = `Count: ${State.halfStepCount}`;
-    $('halfstep-cheat').textContent = 'Perfect Fifth (P5)=7 | Perfect Fourth (P4)=5 | Major Third (M3)=4 | Minor Third (m3)=3';
+    $('halfstep-cheat').textContent = 'Octave (P8)=12 | Perfect Fifth (P5)=7 | Perfect Fourth (P4)=5 | Major Third (M3)=4 | Minor Third (m3)=3 | Major Second (M2)=2';
   } else {
     $('halfstep-info').textContent = '';
     $('halfstep-cheat').textContent = '';
@@ -1314,7 +1497,7 @@ $('btn-hs-toggle').addEventListener('click', () => {
     if (!refCompleted) return;
     State.halfStepStartMidi = refCompleted.midi;
     State.halfStepCount = 0;
-    State.halfStepDirection = 1;
+    State.halfStepDirection = partial.direction || 1;
     State.halfStepActive = true;
   } else {
     State.halfStepActive = false;
@@ -1488,6 +1671,11 @@ document.querySelectorAll('.btn-acc').forEach(btn => {
 
 // ═══ NEXT PARTIAL ═══
 $('btn-next-partial').addEventListener('click', () => {
+  // Carry the cursor over from the partial we just placed — partials only
+  // ascend (except the 8→7 step), so restarting at the fundamental every
+  // time just means re-clicking through everything again.
+  const justCompleted = State.partials[State.currentPartialIdx];
+
   State.currentPartialIdx++;
   State.halfStepActive = false;
 
@@ -1497,12 +1685,9 @@ $('btn-next-partial').addEventListener('click', () => {
     return;
   }
 
-  // Reset working note to a sensible default
-  const partial = State.partials[State.currentPartialIdx];
-  // Start working note from the fundamental position
-  State.workLetter = State.fundamental.letter;
+  State.workLetter = justCompleted.letter;
+  State.workOctave = justCompleted.octave;
   State.workAcc = 0;
-  State.workOctave = State.fundamental.octave;
   State.step = 'A';
 
   clearFeedback();
@@ -1712,6 +1897,20 @@ function startTutorial(index) {
 // ═══ ADVANCED PANEL ═══
 $('advanced-toggle').addEventListener('click', () => {
   $('advanced-content').classList.toggle('visible');
+});
+
+// ═══ BEGINNER BASICS PANEL ═══
+$('basics-toggle').addEventListener('click', () => {
+  $('basics-content').classList.toggle('visible');
+});
+
+document.querySelectorAll('.basics-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.basics-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.basics-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector(`.basics-pane[data-pane="${tab.dataset.tab}"]`).classList.add('active');
+  });
 });
 
 // ═══ INITIALIZATION ═══
